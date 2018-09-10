@@ -12,18 +12,16 @@ RT_TASK demo_task3;
 
 void demo(void *arg) {
 	int num = * (int *)arg;
-	//rt_task_set_periodic(NULL, TM_NOW,  (RTIME)num*pow(10,8));
-	rt_task_sleep(1*pow(10,7));//1*pow(10,7)
-	rt_printf("I am awake");
-	//while (1) {
-	//	RT_TASK_INFO curtaskinfo;
-	//	rt_task_inquire(NULL,&curtaskinfo);
-	//	char str[12];
-	//	sprintf(str, "%d", num);
-	//	rt_printf("Task name: %s ", str);
-	//	rt_printf("\n");
-	//	rt_task_wait_period(NULL);
-	//}
+	rt_task_sleep(1*pow(10,9));
+	rt_task_set_periodic(NULL, TM_NOW,  (RTIME)num*pow(10,9));
+	while (1) {
+		RT_TASK_INFO curtaskinfo;
+		rt_task_inquire(NULL,&curtaskinfo);
+		char str[12];
+		sprintf(str, "%d", num);
+		rt_printf("Task name: %s \n", str);
+		rt_task_wait_period(NULL);
+	}
 	return;
 }
 
@@ -62,11 +60,9 @@ int main(int argc, char* argv[])
   int indexOne = 1;
   int indexTwo = 2;
   int indexThree = 3;
-  int returnval = rt_task_start(&demo_task1, &demo, &indexOne);
-  if (returnval<0)
-	rt_printf("Sending error %d : %s\n",-returnval,strerror(-returnval));
-  //rt_task_start(&demo_task2, &demo, &indexTwo);
-  //rt_task_start(&demo_task3, &demo, &indexThree);
+  rt_task_start(&demo_task1, &demo, &indexOne);
+  rt_task_start(&demo_task2, &demo, &indexTwo);
+  rt_task_start(&demo_task3, &demo, &indexThree);
   printf("end program by CTRL-C\n");
-  //pause();
+  pause();
 }

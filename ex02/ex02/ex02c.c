@@ -17,7 +17,7 @@ void demo(void *arg) {
     rt_task_inquire(NULL,&curtaskinfo);
 	char str[12];
 	sprintf(str, "%d", num);
-    rt_printf("Task name: %s ", str);
+    rt_printf("Task name: %s \n", str);
 }
 
 int main(int argc, char* argv[])
