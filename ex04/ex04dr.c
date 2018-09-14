@@ -4,6 +4,7 @@
 #include <alchemy/task.h>
 #include <alchemy/sem.h>
 #include <alchemy/timer.h>
+#include <stdbool.h>
 
 #define NTASKS 3
 #define HIGH 52 /* high priority */
@@ -24,13 +25,13 @@ void demo(void *arg)
     rt_sem_p(&mysync,TM_INFINITE);
     runtime = 0;
 	int halfway = EXECTIME/2;
-	bool firstHalf = True;
+	bool firstHalf = true;
     while(runtime < EXECTIME) {
       rt_timer_spin(SPINTIME);  // spin cpu doing nothing
       runtime = runtime + SPINTIME;
       printf("Running Task  : %d  at ms : %d\n",num,runtime/1000000);
 	  if (runtime>halfway && firstHalf) {
-		  firstHalf = False;
+		  firstHalf = false;
 		  switch(num) {
 			  case 0 :
 				rt_task_set_priority(&demo_task[0],40);
@@ -41,11 +42,9 @@ void demo(void *arg)
 			  case 2 :
 			    rt_task_set_priority(&demo_task[2],38);
 				break;
-			  case default:
+			  default:
 			    printf("hit default case. \n");
 		  }
-		  rt_task_set_priority(&demo_task[0],LOW+10);
-		  rt_task_set_priority(&demo_task[1],MID+10);
 	  }
     }
     printf("End Task  : %d\n",num);
