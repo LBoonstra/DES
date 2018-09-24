@@ -16,10 +16,7 @@
    RT_SEM midsem;
    RT_SEM highsem;
 
-   #define EXECTIME   2e8   // execution time in ns
-   #define SPINTIME   1e7   // spin time in ns
-
-   
+ 
    void lowesttask(void *arg)
    {	int i;
 	   for (i=0; i<3;i++) {
@@ -62,8 +59,6 @@
    
    int main(int argc, char* argv[])
    {
-	int i;
-    char  str[10] ;
     // semaphore to sync task startup on
 	rt_sem_create(&lowhigh,"LowHighSemaphore",0,S_FIFO);
 	rt_sem_create(&midsem,"MidSemaphore",0,S_FIFO);
