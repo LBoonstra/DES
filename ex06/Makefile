@@ -4,7 +4,7 @@ CFLAGS := $(shell $(XENO_CONFIG)   --posix --alchemy --cflags)
 LDFLAGS := $(shell $(XENO_CONFIG)  --posix --alchemy --ldflags)
 
 CC := gcc   
-EXECUTABLE := ex06a
+EXECUTABLE := ex06a ex06b
 
 all: $(EXECUTABLE)
 
