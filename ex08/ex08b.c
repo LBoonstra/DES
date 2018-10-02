@@ -111,9 +111,19 @@ int main(int argc, char* argv[])
 	rt_task_create(&B_task, "B-task", 0, 50, 0);
 	rt_task_create(&A_interrupt, "A-interrupt", 0, 50, 0);
 	
-	rt_task_start(&A_interrupt, interruptmakerA, 0);
-	rt_task_start(&A_task, interruptA, 0);
-	rt_task_start(&B_task, interruptB, 0);
+	char ab;
+    printf("Enter a for task a or b for task b: ");
+    scanf("%s", &ab); 
+    printf("Task = %s",ab);
+	
+	if (ab == 'a'){
+		rt_task_start(&A_interrupt, interruptmakerA, 0);
+		rt_task_start(&A_task, interruptA, 0);
+	}
+	else{
+		rt_task_start(&B_task, interruptB, 0);
+	}
+	
 	//rt_task_start(&timer_task, &measureTime, 0);
   
     printf("\nType CTRL-C to end this program\n\n" );
