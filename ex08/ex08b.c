@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <alchemy/task.h>
 #include <alchemy/timer.h>
+#include <alchemy/sem.h>
+#include <rtdm/gpio.h>
 #include <math.h>
 
 RT_TASK A_task;
@@ -12,61 +14,14 @@ unsigned long long ts_interrupt_start[10000];
 unsigned long long ts_interrupt_end[10000];
 unsigned long long time_differences[10000];
 
-void interruptmakerA(void *arg) {
-	rt_task_set_periodic(NULL, TM_NOW, (RTIME) pow(10,5));
-	rt_sem_p(&mysync,TM_INFINITE);
-	int ret, value,valueh, valuel;
-	int fdw4  = open("/dev/rtdm/pinctrl-bcm2835/gpio4",O_WRONLY);
-	valueh=1;
-	valuel=0;
-	ret=write(fdw4, &valueh, sizeof(valueh));
-	for (i=0; i<10000;i++){
-		ret=write(fdw4, &valuel, sizeof(valuel));
-		ts_interrupt_start[n]= (int) rt_timer_read();
-		ret=write(fdw4, &valueh, sizeof(valueh));
-		rt_task_wait_period(NULL);
-	}
-}
-
-void interruptA(void *arg) {
-	rt_sem_p(&mysync,TM_INFINITE);
-	int ret, value, valueh, valuel;
-	int fdr13 = open("/dev/rtdm/pinctrl-bcm2835/gpio13",O_RDONLY);
-	int fdw4  = open("/dev/rtdm/pinctrl-bcm2835/gpio4",O_WRONLY);
-	int xeno_trigger=GPIO_TRIGGER_EDGE_FALLING;
-	ret=ioctl(fdr13, GPIO_RTIOC_IRQEN, &xeno_trigger);
-	valueh=1;
-	valuel=0;
-	ret=write(fdw4, &valueh, sizeof(valueh));
-	int n;
-	for (n=0;n<10000;n++) {
-		ret = read(fdr13, &value, sizeof(value));
-		ts_interrupt_end[n]= (int) rt_timer_read();
-	}
-	measureTime();
-}
-
-void interruptB(void *arg) {
-	rt_sem_p(&mysync,TM_INFINITE);
-	int ret, value, valueh, valuel;
-	int fdr13 = open("/dev/rtdm/pinctrl-bcm2835/gpio13",O_RDONLY);
-	int fdw4  = open("/dev/rtdm/pinctrl-bcm2835/gpio4",O_WRONLY);
-	int xeno_trigger=GPIO_TRIGGER_EDGE_FALLING;
-	ret=ioctl(fdr13, GPIO_RTIOC_IRQEN, &xeno_trigger);
-	valueh=1;
-	valuel=0;
-	ret=write(fdw4, &valueh, sizeof(valueh));
-	while(1) {
-		ret = read(fdr13, &value, sizeof(value));
-		ret=write(fdw4, &valuel, sizeof(valuel));
-		ret=write(fdw4, &valueh, sizeof(valueh));
-	}
-}
 
 void calc_time_diffs() {
 	unsigned int n;
 	for (n=0; n<10000;n++) {
-		time_differences[n]=(ts_interrupt_start[n]-ts_interrupt_end[n])/2;
+		unsigned long long start = ts_interrupt_start[n];
+		unsigned long long end = ts_interrupt_end[n];
+		time_differences[n]=(end - start);
+		time_differences[n] = time_differences[n] /2;
 	}
 }
 
@@ -101,6 +56,55 @@ void measureTime() {
     printf("average  %llu\n", average);
 }
 
+void interruptmakerA(void *arg) {
+	rt_task_set_periodic(NULL, TM_NOW, (RTIME) pow(10,5));
+	int ret, value, i;
+	int fdw4  = open("/dev/rtdm/pinctrl-bcm2835/gpio4",O_WRONLY);
+	ret=ioctl(fdw4, GPIO_RTIOC_DIR_OUT, &value);
+	value=1;
+	ret=write(fdw4, &value, sizeof(value));
+	for (i=0; i<10000;i++){
+		value = 0;
+		ret=write(fdw4, &value, sizeof(value));
+		value = 1;
+		ts_interrupt_start[i]= (int) rt_timer_read();
+		rt_task_wait_period(NULL);
+		ret=write(fdw4, &value, sizeof(value));
+	}
+}
+
+void interruptA(void *arg) {
+	int ret, value;
+	int fdr13 = open("/dev/rtdm/pinctrl-bcm2835/gpio13",O_RDONLY);
+	int xeno_trigger=GPIO_TRIGGER_EDGE_FALLING;
+	ret=ioctl(fdr13, GPIO_RTIOC_IRQEN, &xeno_trigger);
+	int n;
+	for (n=0;n<10000;n++) {
+		ret = read(fdr13, &value, sizeof(value));
+		ts_interrupt_end[n]= (int) rt_timer_read();
+	}
+	measureTime();
+}
+
+void interruptB(void *arg) {
+	int ret, valueread, value;
+	int fdr13 = open("/dev/rtdm/pinctrl-bcm2835/gpio13",O_RDONLY);
+	int fdw4  = open("/dev/rtdm/pinctrl-bcm2835/gpio4",O_WRONLY);
+	int xeno_trigger=GPIO_TRIGGER_EDGE_FALLING;
+	ret=ioctl(fdr13, GPIO_RTIOC_IRQEN, &xeno_trigger);
+	ret=ioctl(fdw4, GPIO_RTIOC_DIR_OUT, &value);
+	value=1;
+	ret=write(fdw4, &value, sizeof(value));
+	while(1) {
+		ret = read(fdr13, &valueread, sizeof(valueread));
+		value = 0;
+		ret=write(fdw4, &value, sizeof(value));
+		value = 1;
+		ret=write(fdw4, &value, sizeof(value));
+	}
+}
+
+
 int main(int argc, char* argv[])
 {
   unsigned int nsamples=10000;
@@ -109,23 +113,11 @@ int main(int argc, char* argv[])
 	time_diff = calloc(nsamples, sizeof(RTIME));
 	rt_task_create(&A_task, "A-task", 0, 50, 0);
 	rt_task_create(&B_task, "B-task", 0, 50, 0);
-	rt_task_create(&A_interrupt, "A-interrupt", 0, 50, 0);
+	rt_task_create(&A_interrupt, "A-interrupt", 0, 30, 0);
+	rt_task_start(&A_task, &interruptA, 0); //comment to change to B
+	rt_task_start(&A_interrupt, &interruptmakerA, 0); //Uncomment to change to B
+	//rt_task_start(&B_task, &interruptB, 0); //Uncomment to change to B
 	
-	char ab;
-    printf("Enter a for task a or b for task b: ");
-    scanf("%s", &ab); 
-    printf("Task = %s",ab);
-	
-	if (ab == 'a'){
-		rt_task_start(&A_interrupt, interruptmakerA, 0);
-		rt_task_start(&A_task, interruptA, 0);
-	}
-	else{
-		rt_task_start(&B_task, interruptB, 0);
-	}
-	
-	//rt_task_start(&timer_task, &measureTime, 0);
-  
     printf("\nType CTRL-C to end this program\n\n" );
     pause();
 }
