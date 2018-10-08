@@ -19,8 +19,8 @@ RT_TASK timeshifter_task;
 RT_SEM signalSender;
 
 //ADJUST ACCORDING TO 9A BEFORE RUNNING.
-static int sensor_interrupted_time = 1658757;
-static int rotation_time =  83952033;
+static int sensor_interrupted_time = 1658757/7;
+static int rotation_time =  83952033/7;
 static RTIME time_shift = 0;
 
 void interruptHandler(void *arg) {
@@ -40,15 +40,33 @@ void interruptHandler(void *arg) {
 void threeLeft(void *arg) {
 	int ret, value;
 	int fdw2 = open("/dev/rtdm/pinctrl-bcm2835/gpio2",O_WRONLY);
-	int xeno_trigger=GPIO_TRIGGER_EDGE_FALLING;
 	ret=ioctl(fdw2, GPIO_RTIOC_DIR_OUT, &value);
 	int fdw9 = open("/dev/rtdm/pinctrl-bcm2835/gpio9",O_WRONLY);
 	ret=ioctl(fdw9, GPIO_RTIOC_DIR_OUT, &value);
 	int period_time = rotation_time- sensor_interrupted_time*3; //Adjust on the result of 9a on average sensor
 	int sleep_time = sensor_interrupted_time/2;
+	int fdw3 = open("/dev/rtdm/pinctrl-bcm2835/gpio3",O_WRONLY);
+	ret=ioctl(fdw3, GPIO_RTIOC_DIR_OUT, &value);
+	int fdw10 = open("/dev/rtdm/pinctrl-bcm2835/gpio10",O_WRONLY);
+	ret=ioctl(fdw10, GPIO_RTIOC_DIR_OUT, &value);
 	value=0;
 	ret = write(fdw2, &value, sizeof(value));
 	ret = write(fdw9, &value, sizeof(value));
+	ret = write(fdw3, &value, sizeof(value));
+	ret = write(fdw10, &value, sizeof(value));
+	int fdw4 = open("/dev/rtdm/pinctrl-bcm2835/gpio4",O_WRONLY);
+	ret=ioctl(fdw4, GPIO_RTIOC_DIR_OUT, &value);
+	int fdw22 = open("/dev/rtdm/pinctrl-bcm2835/gpio22",O_WRONLY);
+	ret=ioctl(fdw22, GPIO_RTIOC_DIR_OUT, &value);
+	ret = write(fdw4, &value, sizeof(value));
+	ret = write(fdw22, &value, sizeof(value));
+	int fdw17 = open("/dev/rtdm/pinctrl-bcm2835/gpio17",O_WRONLY);
+	ret=ioctl(fdw17, GPIO_RTIOC_DIR_OUT, &value);
+	int fdw27 = open("/dev/rtdm/pinctrl-bcm2835/gpio27",O_WRONLY);
+	ret=ioctl(fdw27, GPIO_RTIOC_DIR_OUT, &value);
+	ret = write(fdw17, &value, sizeof(value));
+	ret = write(fdw27, &value, sizeof(value));
+	
 	while(1) {
 		int left_over_time;
 		rt_sem_p(&signalSender, TM_INFINITE);
@@ -58,14 +76,55 @@ void threeLeft(void *arg) {
 		else{
 			left_over_time = period_time + time_shift;
 		}
-		rt_task_sleep(left_over_time);
+		//rt_task_sleep(left_over_time);
 		value=1;
+		ret = write(fdw2, &value, sizeof(value));
+		ret = write(fdw9, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		ret = write(fdw3, &value, sizeof(value));
+		ret = write(fdw10, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		ret = write(fdw4, &value, sizeof(value));
+		ret = write(fdw22, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		ret = write(fdw17, &value, sizeof(value));
+		ret = write(fdw27, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		value=0;
+		ret = write(fdw2, &value, sizeof(value));
+		ret = write(fdw9, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		ret = write(fdw3, &value, sizeof(value));
+		ret = write(fdw10, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		ret = write(fdw4, &value, sizeof(value));
+		ret = write(fdw22, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		ret = write(fdw17, &value, sizeof(value));
+		ret = write(fdw27, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		value=1;
+		rt_task_sleep(sleep_time);
+		ret = write(fdw4, &value, sizeof(value));
+		ret = write(fdw22, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		ret = write(fdw3, &value, sizeof(value));
+		ret = write(fdw10, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
 		ret = write(fdw2, &value, sizeof(value));
 		ret = write(fdw9, &value, sizeof(value));
 		rt_task_sleep(sleep_time);
 		value=0;
 		ret = write(fdw2, &value, sizeof(value));
 		ret = write(fdw9, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		ret = write(fdw3, &value, sizeof(value));
+		ret = write(fdw10, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		ret = write(fdw4, &value, sizeof(value));
+		ret = write(fdw22, &value, sizeof(value));
+		rt_task_sleep(sleep_time);
+		
 	}
 }
 
@@ -285,24 +344,6 @@ int main(int argc, char* argv[])
 		
 	rt_task_create(&threeLeft_task, "threeLeft_task", 0, 50, 0);
 	rt_task_start(&threeLeft_task, &threeLeft, 0);
-	
-	rt_task_create(&twoLeft_task, "twoLeft_task", 0, 50, 0);
-	rt_task_start(&twoLeft_task, &twoLeft, 0);
-	
-	rt_task_create(&oneLeft_task, "oneLeft_task", 0, 50, 0);
-	rt_task_start(&oneLeft_task, &oneLeft, 0);
-	
-	rt_task_create(&middle_task, "middle_task", 0, 50, 0);
-	rt_task_start(&middle_task, &middle, 0);
-	
-	rt_task_create(&oneRight_task, "oneRight", 0, 50, 0);
-	rt_task_start(&oneRight_task, &oneRight, 0);
-	
-	rt_task_create(&twoRight_task, "twoRight", 0, 50, 0);
-	rt_task_start(&twoRight_task, &twoRight, 0);
-	
-	rt_task_create(&threeRight_task, "threeRight", 0, 50, 0);
-	rt_task_start(&threeRight_task, &threeRight, 0);
 	
 	rt_task_create(&interrupt_task, "interrupt_handler", 0, 99, 0);
 	rt_task_start(&interrupt_task, &interruptHandler, 0);

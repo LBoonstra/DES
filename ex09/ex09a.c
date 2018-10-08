@@ -59,6 +59,9 @@ void calc_average_time(int nsamples){
 		sumfr+= time_differences_sensor[i];
 	}
 	averagefr = (unsigned long long) (sumfr / (nsamples));
+	if (averagefr > 80000000){
+		averagefr = average-averagefr;
+	}
 	printf("average sensor  %llu\n", averagefr);
 }
 
