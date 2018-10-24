@@ -15,7 +15,7 @@ import random
 import bluetooth, threading
 from time import sleep
 
-class slave(object):
+class slave:
     '''
     classdocs
     '''

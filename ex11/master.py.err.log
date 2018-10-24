@@ -1,0 +1,17 @@
+/home/robot/master.py: 5: /home/robot/master.py: 
+Created on 19 okt. 2018
+
+@author: Richa
+: not found
+from: can't read /var/mail/ev3dev2.motor
+from: can't read /var/mail/ev3dev2.sound
+from: can't read /var/mail/ev3dev2.display
+from: can't read /var/mail/ev3dev2.sensor.lego
+from: can't read /var/mail/ev3dev2.sensor.lego
+from: can't read /var/mail/ev3dev2._platform.ev3
+from: can't read /var/mail/ev3dev2.led
+from: can't read /var/mail/ev3dev2.sensor.lego
+/home/robot/master.py: 14: /home/robot/master.py: import: not found
+/home/robot/master.py: 15: /home/robot/master.py: import: not found
+from: can't read /var/mail/time
+/home/robot/master.py: 18: /home/robot/master.py: Syntax error: "(" unexpected

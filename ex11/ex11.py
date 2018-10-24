@@ -8,7 +8,7 @@ from robotica import master
 from robotica import roleInLife
 
 if __name__ == '__main__':
-    server_mac = '00:17:E9:B4:C7:4E'
+    server_mac = 'CC:78:AB:50:DA:17'
     position = roleInLife(slave(server_mac))
     position.connect()
     position.run()
