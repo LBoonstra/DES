@@ -1,0 +1,40 @@
+grammar marsrover.Rdsl with org.eclipse.xtext.common.Terminals
+
+generate rdsl "http://www.Rdsl.marsrover"
+
+Mission: DriveMission | DoNothingMission;
+
+Task: 'Task:' mission += Mission;
+
+DoNothingMission: 'DoNothing:' time = INT;
+
+DriveMission: 'Drive:' dir = DirectionOptions
+	'speed:'speed = SpeedOptions
+	(('stopcondition:' stopcon = StopCon) |(time  = INT) )?
+;
+
+enum StopCon:
+	STOP ='stop'|
+	BLUE = 'blue'
+;
+
+enum Color:
+	YELLOW = 'yellow' |
+	BLUE = 'blue'|
+	RED = 'red'|
+	BLACK = 'black'
+;
+
+enum SpeedOptions:
+	NOT_MOVING = 'not_moving'|
+	SLOW = 'slow'|
+	MEDIUM = 'medium'|
+	FAST = 'fast'
+;
+
+enum DirectionOptions:
+	LEFT = 'left'|
+	RIGHT = 'right'|
+	FORWARD = 'forward'|
+	BACKWARD = 'backward'
+;
