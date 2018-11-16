@@ -1,22 +1,47 @@
-grammar marsrover.Rdsl with org.eclipse.xtext.common.Terminals
+grammar lego.rover.Rdsl with org.eclipse.xtext.common.Terminals
 
-generate rdsl "http://www.Rdsl.marsrover"
-
-Mission: DriveMission | DoNothingMission;
+generate rdsl "http://www.rover.lego/Rdsl"
 
 Task: 'Task:' mission += Mission;
+
+Mission: DriveMission | DoNothingMission |FindColorsMission |FollowLineMission|ParkingMission;
 
 DoNothingMission: 'DoNothing:' time = INT;
 
 DriveMission: 'Drive:' dir = DirectionOptions
 	'speed:'speed = SpeedOptions
-	(('stopcondition:' stopcon = StopCon) |(time  = INT) )?
+	'stopconditons:' stopcons += StopOptions//[StopOptions]+
+	('avoid:' avoid = Obstacles)?
 ;
 
-enum StopCon:
-	STOP ='stop'|
-	BLUE = 'blue'
+FindColorsMission: 'findColors:' findcolor += Colors // [Colors]+
+	'speed:'speed = SpeedOptions
+	'stopconditons:' stopcons += StopOptions//[StopOptions]+
+	('avoid:' avoid = Obstacles)?
 ;
+
+FollowLineMission: 'FollowColor:' followColor = Color
+	'speed:'speed = SpeedOptions
+	'stopconditons:' stopcons += StopOptions//[StopOptions]+
+;
+
+ParkingMission: 'ParkingColor:' ParkingColor = Color
+	'speed:'speed = SpeedOptions
+	'stopconditons:' stopcons += StopOptions//[StopOptions]+
+;
+
+Colors: colors = Color
+;
+StopOptions: (( stopcon = Obstacles) |('time' time  = INT) );
+
+Obstacles:
+	((stopcon = ObstaclesEnum) |('color' color= Color) )
+;
+
+enum ObstaclesEnum:
+	BUMPER = 'bumper'|
+	OBJECT = 'object'
+	;
 
 enum Color:
 	YELLOW = 'yellow' |
@@ -36,5 +61,6 @@ enum DirectionOptions:
 	LEFT = 'left'|
 	RIGHT = 'right'|
 	FORWARD = 'forward'|
-	BACKWARD = 'backward'
+	BACKWARD = 'backward'|
+	RANDOM = 'random'
 ;
