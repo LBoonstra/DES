@@ -1,0 +1,75 @@
+Planning
+ DepartmentABC 
+Task:
+Report
+ Strategy 
+persons:
+ Alice Carol 
+priority:
+5
+Task:
+Pay
+5000
+euro
+persons:
+ Bob 
+priority:
+2
+Person:
+ Alice 
+Person:
+ Fred 
+Task:
+Lunch
+ Canteen 
+persons:
+ Fred 
+priority:
+8
+duration:
+1
+hour
+Task:
+Meeting
+"Demo"
+persons:
+ Alice 
+priority:
+4
+duration:
+900
+min
+Person:
+ Bob  
+Task:
+Meeting
+"Training"
+persons:
+ Carol 
+priority:
+7
+duration:
+3
+day
+Task:
+Report
+ Overview 
+persons:
+ Dave 
+priority:
+2
+duration:
+9
+week
+Task:
+Pay
+3500
+euro
+persons:
+ Bob 
+priority:
+3
+Person:
+ Carol 
+Person:
+ Dave

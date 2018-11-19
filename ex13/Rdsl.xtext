@@ -1,6 +1,6 @@
-grammar lego.rover.Rdsl with org.eclipse.xtext.common.Terminals
+grammar rover.lego.Rdsl with org.eclipse.xtext.common.Terminals
 
-generate rdsl "http://www.rover.lego/Rdsl"
+generate rdsl "http://www.lego.rover/Rdsl"
 
 Task: 'Task:' mission=Mission;
 
@@ -10,19 +10,19 @@ DoNothingMission: 'DoNothing:' time = INT;
 
 DriveMission: 'speed:'speed = SpeedOptions
 	'drive:' dir = DirectionOptions
-	'stopconditons:' stopcons += StopOptions*//[StopOptions]+
+	'stopconditions:' stopcons += StopOptions*
 	('avoid:' avoid = Obstacles)?
 ;
 
-FindColorsMission: 'findColors:' findcolor += Colors // [Colors]+
+FindColorsMission: 'findColors:' findcolor += Colors*
 	'speed:'speed = SpeedOptions
-	'stopconditons:' stopcons += StopOptions*//[StopOptions]+
+	'stopconditions:' stopcons += StopOptions*
 	('avoid:' avoid = Obstacles)?
 ;
 
 FollowLineMission: 'FollowColor:' followColor = Color
 	'speed:'speed = SpeedOptions
-	'stopconditons:' stopcons += StopOptions*//[StopOptions]+
+	'stopconditions:' stopcons += StopOptions*
 ;
 
 Colors: colors = Color
@@ -30,8 +30,10 @@ Colors: colors = Color
 StopOptions:  Obstacles| time  = INT;
 
 Obstacles:
-	((stopcon1 = ObstaclesEnum) |('color' color= Color) )
+	(( UseObstacle) |('color' color= Color) )
 ;
+
+UseObstacle: OE= ObstaclesEnum;
 
 enum ObstaclesEnum:
 	BUMPER = 'bumper'|

@@ -1,0 +1,9 @@
+grammar game.life.Dsl with org.eclipse.xtext.common.Terminals
+
+generate dsl "http://www.life.game/Dsl"
+
+Rules:
+	'DeadSmaller' small=INT
+	'DeadBigger' big=INT
+	'Birth' birth=INT
+;

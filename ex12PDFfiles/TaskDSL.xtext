@@ -1,0 +1,45 @@
+grammar persons.tasks.TaskDSL with org.eclipse.xtext.common.Terminals 
+generate taskDSL "http://www.tasks.persons/TaskDSL"
+
+
+Planning: 
+'Planning'
+name
+ = ID 
+    (persons += Person | tasks += Task)*  
+;  
+Person: 
+'Person:'
+name
+=ID 
+; 
+Task: 
+'Task:'
+ action = Action  
+'persons:'
+ persons += [
+Person
+]+ 
+'priority:'
+ prio = INT  
+      ('duration:' duration = Duration)?  
+;
+Duration: 
+    dl = INT unit = TimeUnit 
+; 
+Action: LunchAction | MeetingAction | PaperAction | PaymentAction 
+; 
+LunchAction: 'Lunch' location = ID 
+; 
+MeetingAction: 'Meeting' topic = STRING 
+; 
+PaperAction: 'Report' report = ID 
+; 
+PaymentAction: 'Pay' amount = INT 'euro'
+; 
+enum TimeUnit: 
+    MINUTE = 'min' | 
+    HOUR = 'hour' | 
+    DAY = 'day' | 
+    WEEK = 'week'
+;

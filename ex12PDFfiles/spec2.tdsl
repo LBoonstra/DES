@@ -1,0 +1,65 @@
+Persons:
+ Alice Bob Carol Dave Fred 
+Task
+Report
+ Strategy 
+person
+ Alice 
+priority:
+5
+Task
+Pay
+5000
+euro
+person
+ Bob 
+priority:
+2
+Task
+Lunch
+ Canteen 
+person
+ Fred 
+priority:
+8
+duration:
+1
+hour
+Task
+Meeting
+"Demo"
+person
+ Alice 
+priority:
+4
+duration:
+90
+min
+Task
+Meeting
+"Training"
+person
+ Carol 
+priority:
+7
+duration:
+3
+day
+Task
+Report
+ Overview 
+person
+ Dave 
+priority:
+2
+duration:
+9
+week
+Task
+Pay
+3500
+euro
+person
+ Bob 
+priority:
+3
