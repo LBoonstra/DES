@@ -1,21 +1,23 @@
 package lego.rover.generator
 
+import lego.rover.rdsl.Color
+import lego.rover.rdsl.DirectionOptions
 import lego.rover.rdsl.DoNothingMission
 import lego.rover.rdsl.DriveMission
 import lego.rover.rdsl.FindColorsMission
 import lego.rover.rdsl.FollowLineMission
-import lego.rover.rdsl.Mission
 import lego.rover.rdsl.ObstaclesEnum
 import lego.rover.rdsl.ParkingMission
+import lego.rover.rdsl.SpeedOptions
+import lego.rover.rdsl.Task
 
 class PythonGenerator {
-	def static toPy(Mission root){
+	def static toPy(Task root){
 		'''
-		#marsrovermission.py
-		«"\n"»
+		#!/usr/bin/env python3
 		«"\n"»
 		«onStartUp()»
-		«mission2Text(root)»
+		«mission2Text(root.mission)»
 		'''
 	}
 	def static onStartUp()'''
@@ -30,7 +32,7 @@ class PythonGenerator {
 			import random«"\n"»
 			import time«"\n"»
 			«"\n"»
-			colors_found = [False, False, False]«"\n"»
+			colors_found = [False, False, False, False]«"\n"»
 			left_motor = LargeMotor(OUTPUT_A)«"\n"»
 			right_motor = LargeMotor(OUTPUT_D)«"\n"»
 			tsLeft = TouchSensor(INPUT_1)«"\n"»
@@ -49,18 +51,24 @@ class PythonGenerator {
 			my_display = Display()«"\n"»
 			my_display.clear()«"\n"»
 			cs.calibrate_white()«"\n"»
+			currenttime = int(time.time())«"\n"»
 	'''
 	def static dispatch mission2Text(DriveMission mission)'''
+			while (True):«"\n"» 
+			«"\t"»«mission.dir.»
 			
 	'''
-	
+	def static dispatch drive2Text(DirectionOptions drive)'''
+	'''
 	def static dispatch mission2Text(DoNothingMission mission)'''
-			currenttime = int(time.time())«"\n"»
 			while (int(time.time()) - currenttime)> «mission.time»:«"\n"»
 			«"\t"»time.sleep(1)«"\n"»
 	'''
 	def static dispatch mission2Text(FindColorsMission mission)'''
-			
+		//WHile niet alle kleuren gevonden rij random rond.
+		«mission.findcolor.»
+		while():«"\n"»
+		«"\t"»
 	'''
 	def static dispatch mission2Text(FollowLineMission mission)'''
 			
@@ -73,6 +81,32 @@ class PythonGenerator {
 		switch(obst){
 			case ObstaclesEnum:: BUMPER: return '''m'''
 			case ObstaclesEnum:: OBJECT: return '''h'''
+		}
+	}
+	def static CharSequence toText(Color color){
+		switch(color){
+			case Color:: YELLOW: return '''
+			'''
+			case Color:: BLUE: return '''b'''
+			case Color:: RED: return '''r'''
+			case Color:: BLACK: return '''bl'''
+		}
+	}
+		def static CharSequence toText(SpeedOptions speed){
+		switch(speed){
+			case SpeedOptions:: NOT_MOVING: return '''y'''
+			case SpeedOptions:: SLOW: return '''b'''
+			case SpeedOptions:: MEDIUM: return '''r'''
+			case SpeedOptions:: FAST: return '''bl'''
+		}
+	}
+		def static CharSequence toText(DirectionOptions dir){
+		switch(dir){
+			case DirectionOptions:: LEFT: return '''y'''
+			case DirectionOptions:: RIGHT: return '''b'''
+			case DirectionOptions:: FORWARD: return '''r'''
+			case DirectionOptions:: BACKWARD: return '''bl'''
+			case DirectionOptions:: RANDOM: return '''bl'''
 		}
 	}
 	

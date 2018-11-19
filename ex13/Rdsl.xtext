@@ -2,7 +2,7 @@ grammar lego.rover.Rdsl with org.eclipse.xtext.common.Terminals
 
 generate rdsl "http://www.rover.lego/Rdsl"
 
-Task: 'Task:' mission += Mission;
+Task: 'Task:' mission=Mission;
 
 Mission: DriveMission | DoNothingMission |FindColorsMission |FollowLineMission|ParkingMission;
 
@@ -10,24 +10,24 @@ DoNothingMission: 'DoNothing:' time = INT;
 
 DriveMission: 'Drive:' dir = DirectionOptions
 	'speed:'speed = SpeedOptions
-	'stopconditons:' stopcons += StopOptions//[StopOptions]+
+	'stopconditons:' stopcons += StopOptions*//[StopOptions]+
 	('avoid:' avoid = Obstacles)?
 ;
 
 FindColorsMission: 'findColors:' findcolor += Colors // [Colors]+
 	'speed:'speed = SpeedOptions
-	'stopconditons:' stopcons += StopOptions//[StopOptions]+
+	'stopconditons:' stopcons += StopOptions*//[StopOptions]+
 	('avoid:' avoid = Obstacles)?
 ;
 
 FollowLineMission: 'FollowColor:' followColor = Color
 	'speed:'speed = SpeedOptions
-	'stopconditons:' stopcons += StopOptions//[StopOptions]+
+	'stopconditons:' stopcons += StopOptions*//[StopOptions]+
 ;
 
 ParkingMission: 'ParkingColor:' ParkingColor = Color
 	'speed:'speed = SpeedOptions
-	'stopconditons:' stopcons += StopOptions//[StopOptions]+
+	'stopconditons:' stopcons += StopOptions*//[StopOptions]+
 ;
 
 Colors: colors = Color
