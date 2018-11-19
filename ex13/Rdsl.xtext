@@ -8,8 +8,8 @@ Mission: DriveMission | DoNothingMission |FindColorsMission |FollowLineMission;
 
 DoNothingMission: 'DoNothing:' time = INT;
 
-DriveMission: 'speed:'speed = SpeedOptions
-	'drive:' dir = DirectionOptions
+DriveMission: 'drive:' dir = DirectionOptions
+	'speed:'speed = SpeedOptions
 	'stopconditions:' stopcons += StopOptions*
 	('avoid:' avoid = Obstacles)?
 ;
@@ -27,11 +27,15 @@ FollowLineMission: 'FollowColor:' followColor = Color
 
 Colors: colors = Color
 ;
-StopOptions:  Obstacles| time  = INT;
+StopOptions:  Obstacles| TimeObject;
+
+TimeObject: 'time' time= INT;
 
 Obstacles:
-	(( UseObstacle) |('color' color= Color) )
+	 UseObstacle |ColorWithName
 ;
+
+ColorWithName: 'color' color = Color;
 
 UseObstacle: OE= ObstaclesEnum;
 
