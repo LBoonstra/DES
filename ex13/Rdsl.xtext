@@ -4,12 +4,12 @@ generate rdsl "http://www.rover.lego/Rdsl"
 
 Task: 'Task:' mission=Mission;
 
-Mission: DriveMission | DoNothingMission |FindColorsMission |FollowLineMission|ParkingMission;
+Mission: DriveMission | DoNothingMission |FindColorsMission |FollowLineMission;
 
 DoNothingMission: 'DoNothing:' time = INT;
 
-DriveMission: 'Drive:' dir = DirectionOptions
-	'speed:'speed = SpeedOptions
+DriveMission: 'speed:'speed = SpeedOptions
+	'drive:' dir = DirectionOptions
 	'stopconditons:' stopcons += StopOptions*//[StopOptions]+
 	('avoid:' avoid = Obstacles)?
 ;
@@ -25,17 +25,12 @@ FollowLineMission: 'FollowColor:' followColor = Color
 	'stopconditons:' stopcons += StopOptions*//[StopOptions]+
 ;
 
-ParkingMission: 'ParkingColor:' ParkingColor = Color
-	'speed:'speed = SpeedOptions
-	'stopconditons:' stopcons += StopOptions*//[StopOptions]+
-;
-
 Colors: colors = Color
 ;
-StopOptions: (( stopcon = Obstacles) |('time' time  = INT) );
+StopOptions:  Obstacles| time  = INT;
 
 Obstacles:
-	((stopcon = ObstaclesEnum) |('color' color= Color) )
+	((stopcon1 = ObstaclesEnum) |('color' color= Color) )
 ;
 
 enum ObstaclesEnum:
