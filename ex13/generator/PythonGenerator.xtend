@@ -35,7 +35,6 @@ class PythonGenerator {
 		import random«"\n"»
 		import time«"\n"»
 		«"\n"»
-		colors_found = [False, False, False, False]«"\n"»
 		left_motor = LargeMotor(OUTPUT_A)«"\n"»
 		right_motor = LargeMotor(OUTPUT_D)«"\n"»
 		tsLeft = TouchSensor(INPUT_1)«"\n"»
@@ -55,10 +54,11 @@ class PythonGenerator {
 		my_display.clear()«"\n"»
 		cs.calibrate_white()«"\n"»
 		currenttime = int(time.time())«"\n"»
+		counter=0«"\n"»
 	'''
 	def static dispatch mission2Text(DriveMission mission)'''
+		speed = «toText(mission.speed)»«"\n"»
 		while (True):«"\n"» 
-		«"\t"»speed = «toText(mission.speed)»«"\n"»
 		«toText(mission.dir)»
 		«"\t"»new_color = cs.color«"\n"»
 		«"\t"»distance = us.value()/10«"\n"»
@@ -75,9 +75,9 @@ class PythonGenerator {
 		«"\t"»time.sleep(1)«"\n"»
 	'''
 	def static dispatch mission2Text(FindColorsMission mission)'''
+		speed = «toText(mission.speed)»«"\n"»
 		colorsToFind = [«FOR fc : mission.findcolor SEPARATOR "," AFTER "]"»«toText(fc.colors)»«ENDFOR»«"\n"»
 		while (True):«"\n"» 
-		«"\t"»speed = «toText(mission.speed)»«"\n"»
 		«randomMotor()»
 		«"\t"»new_color = cs.color«"\n"»
 		«"\t"»distance = us.value()/10«"\n"»
@@ -89,15 +89,17 @@ class PythonGenerator {
 		«"\t"»«"\t"»right_motor.stop()«"\n"»
 		«"\t"»«"\t"»break«"\n"»
 		«"\t"»if new_color in colorsToFind:«"\n"»
+		«"\t"»«"\t"»left_motor.stop()«"\n"»
+		«"\t"»«"\t"»right_motor.stop()«"\n"»
 		«"\t"»«"\t"»colorsToFind.remove(new_color)«"\n"»
 		
 	'''
 	def static dispatch mission2Text(FollowLineMission mission)'''
-		colorToFollow = «toText(mission.followColor)»
-		colorsToAvoid = [1,2,4,5]
-		colorsToAvoid.remove(colorToFollow)
-		while True:
-		«"\t"»speed = «toText(mission.speed)»«"\n"»
+		colorToFollow = «toText(mission.followColor)»«"\n"»
+		colorsToAvoid = [1,2,4,5,6]«"\n"»
+		colorsToAvoid.remove(colorToFollow)«"\n"»
+		speed = «toText(mission.speed)»«"\n"»
+		while True:«"\n"»
 		«forwardMotor()»
 		«"\t"»new_color = cs.color«"\n"»
 		«"\t"»distance = us.value()/10«"\n"»
@@ -108,13 +110,14 @@ class PythonGenerator {
 		«"\t"»if new_color in colorsToAvoid:«"\n"»
 		«"\t"»«"\t"»left_motor.stop()«"\n"»
 		«"\t"»«"\t"»right_motor.stop()«"\n"»
-		«"\t"»«"\t"»curTime=0.1
-		«"\t"»«"\t"»leftForward=1
+		«"\t"»«"\t"»curTime=0.5
+		«"\t"»«"\t"»leftForward=5
 		«"\t"»«"\t"»while new_color != colorToFollow:«"\n"»
 		«"\t"»«"\t"»«"\t"»left_motor.on_for_seconds(SpeedPercent(leftForward), curTime,  block=False)«"\n"»
-		«"\t"»«"\t"»«"\t"»right_motor.on_for_seconds(SpeedPercent(leftForward), curTime,  block=True)«"\n"»
+		«"\t"»«"\t"»«"\t"»right_motor.on_for_seconds(SpeedPercent(-leftForward), curTime,  block=True)«"\n"»
 		«"\t"»«"\t"»«"\t"»leftForward=leftForward*-1
-		«"\t"»«"\t"»«"\t"»curtime+=0.1
+		«"\t"»«"\t"»«"\t"»curTime+=0.5
+		«"\t"»«"\t"»«"\t"»new_color = cs.color
 		'''
 		
 	def static dispatch stopCon2Text(Obstacles obst)'''«obstacles2Text(obst)»'''
@@ -157,11 +160,11 @@ class PythonGenerator {
 		}
 	}
 
-		def static leftMotor()'''
+		def static rightMotor()'''
 			«"\t"»left_motor.on_for_seconds(SpeedPercent(speed), 10,  block=False)«"\n"»
 			«"\t"»right_motor.on_for_seconds(SpeedPercent(-speed), 10,  block=False)«"\n"»
 		'''
-		def static rightMotor()'''
+		def static leftMotor()'''
 			«"\t"»left_motor.on_for_seconds(SpeedPercent(-speed), 10,  block=False)«"\n"»
 			«"\t"»right_motor.on_for_seconds(SpeedPercent(speed), 10,  block=False)«"\n"»
 		'''
@@ -174,13 +177,12 @@ class PythonGenerator {
 			«"\t"»right_motor.on_for_seconds(SpeedPercent(-speed), 10,  block=False)«"\n"»
 		'''
 		def static randomMotor()'''
-			«"\t"»counter=0«"\n"»
 			«"\t"»if counter>50:«"\n"»
-			«"\t"»«"\t"»speedLeft=random.randint(speed/2,speed*2)«"\n"»
-			«"\t"»«"\t"»speedRight=random.randint(speed/2,speed*2)«"\n"»
+			«"\t"»«"\t"»speedLeft=random.randint(speed-5,speed+5)«"\n"»
+			«"\t"»«"\t"»speedRight=random.randint(speed-5,speed+5)«"\n"»
 			«"\t"»«"\t"»counter=0«"\n"»
 			«"\t"»else:«"\n"»
-			«"\t"»«"\t"»counter+=1«"\n"»
+			«"\t"»«"\t"»counter += 1«"\n"»
 			«"\t"»left_motor.on_for_seconds(SpeedPercent(speedLeft), 10,  block=False)«"\n"»
 			«"\t"»right_motor.on_for_seconds(SpeedPercent(speedRight), 10,  block=False)«"\n"»
 		'''
@@ -198,7 +200,7 @@ class PythonGenerator {
 			«"\t"»«"\t"»else:«"\n"»
 			«"\t"»«"\t"»«"\t"»right_motor.on_for_seconds(SpeedPercent(-20), 1, block=True)«"\n"»
 		'''
-		def static bumperFunction()'''sLeft.is_pressed or sRight.is_pressed'''
+		def static bumperFunction()'''tsLeft.is_pressed or tsRight.is_pressed'''
 		
 		def static objectFunction()'''distance < 28'''
 }

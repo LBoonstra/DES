@@ -2,6 +2,15 @@ grammar rover.lego.Rdsl with org.eclipse.xtext.common.Terminals
 
 generate rdsl "http://www.lego.rover/Rdsl"
 
+// Code by Richard and Lisa. Take generated code (copy and paste generated text, not file) and place them in
+// a code file that is in unix and text-file encoding UTF-8 (and is capable of running on the robot).
+// We placed the focus on getting working DSL for the robot: for the marsrover, we will aim at making the above
+// easier, preferably that generated code can immediately be uploaded. Validation code will be implemented for
+// the MarsRover, but would only be of 'warning, this is not logical.'
+// Suggestions for specs:
+//Task: FollowColor: black speed: medium stopconditions: bumper object time 40
+//Task: findColors: black red speed: fast stopconditions: color blue avoid: bumper
+//Task: drive: right speed: medium stopconditions: object avoid: color black
 Task: 'Task:' mission=Mission;
 
 Mission: DriveMission | DoNothingMission |FindColorsMission |FollowLineMission;
