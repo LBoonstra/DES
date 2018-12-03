@@ -1,0 +1,3 @@
+-groen is ook wit..
+met wielen links of rechts kan de robot door een meer rijden, maar indien de robot recht over een meer probeert te rijden komt het achterwiel vast te zitten. 
+-detecteert veel blokken niet meer als ze omgevallen zijn, dus zeker er van zijn dat de blokken van de wereld worden afgeduwt kan niet.
