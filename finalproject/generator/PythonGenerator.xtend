@@ -1,5 +1,7 @@
 package dsl.finalproject.generator
 
+import dsl.finalproject.fp.Button
+import dsl.finalproject.fp.ButtonPress
 import dsl.finalproject.fp.Color
 import dsl.finalproject.fp.ColorWithName
 import dsl.finalproject.fp.DirectionOptions
@@ -125,6 +127,8 @@ class PythonGenerator {
 	
 	def static dispatch obstacles2Text(ColorWithName colorN)'''new_color==«toText(colorN.color)»'''
 	
+	def static dispatch stopCon2Text(ButtonPress button)'''«toText(button.buttonloc)» '''	
+	
 	def static CharSequence toText(ObstaclesEnum obst){
 		switch(obst){
 			case ObstaclesEnum:: BUMPER: return bumperFunction()
@@ -164,6 +168,16 @@ class PythonGenerator {
 			case DirectionOptions:: FORWARD: return forwardMotor()
 			case DirectionOptions:: BACKWARD: return backwardMotor()
 			case DirectionOptions:: RANDOM: return randomMotor()
+		}
+	}
+			def static CharSequence toText(Button button){
+		switch(button){
+			case Button:: LEFT: return '''btn.left'''
+			case Button:: TOP: return '''btn.up'''
+			case Button:: MID: return '''btn.center'''
+			case Button:: RIGHT: return '''btn.right'''
+			case Button:: DOWN: return '''btn.down'''
+			case Button:: ANY: return '''btn.any'''
 		}
 	}
 
