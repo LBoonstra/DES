@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
-from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_D, SpeedPercent
+from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_D, OUTPUT_B, SpeedPercent, Motor
 from ev3dev2.sound import Sound
 from ev3dev2.display import Display
 from ev3dev2.sensor.lego import ColorSensor
 from ev3dev2.sensor.lego import TouchSensor
-from ev3dev2._platform.ev3 import INPUT_4, INPUT_1
+from ev3dev2._platform.ev3 import INPUT_4, INPUT_1, INPUT_2, INPUT_3
 from ev3dev2.led import Leds
 from ev3dev2.sensor.lego import UltrasonicSensor
 import random
 import bluetooth, threading
 from time import sleep
+from time import time
 '''
 #is_master = True
 is_master = False
@@ -66,18 +67,40 @@ def listen(sock_in):
         #sock_out.flush()
         #print('Sent ' + str(1))f
 '''
-backUnsafe=False
-forwardCLUnsafe=False
-forwardCRUnsafe=False
-forwardCMUnsafe=False
+
+def stateExp():
+    global backUnsafe
+    global forwardCLUnsafe
+    global forwardCRUnsafe
+    global forwardCMUnsafe
+    if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):
+        return 'DesperateTurn'
+    elif backUnsafe:
+        return 'BackDepthAvoidance'
+    elif forwardCMUnsafe:
+        return 'ForwardMidDepthAvoidance'
+    elif forwardCLUnsafe:
+        return 'ForwardLeftDepthAvoidance'
+    elif forwardCRUnsafe:
+        return 'ForwardRightDepthAvoidance'
+    return ''
+    
 
 def stateF():
+    global backUnsafe
+    global forwardCLUnsafe
+    global forwardCRUnsafe
+    global forwardCMUnsafe
     if backUnsafe:
         return 'DesperateTurn'
     else:
         return ''
     
 def stateBD():
+    global backUnsafe
+    global forwardCLUnsafe
+    global forwardCRUnsafe
+    global forwardCMUnsafe
     if forwardCLUnsafe or forwardCRUnsafe or forwardCMUnsafe:
         return 'DesperateTurn'
     else:
@@ -85,46 +108,206 @@ def stateBD():
 
 def determineState(curState):
     switcher = { 
-        'Exploring': stateExp(),
+        'Exploring': stateExp,
         #'BumperAvoidance': stateBump(), 
         #'ObstacleAvoidance':stateObst(), 
-        'BackDepthAvoidance': stateBD(), 
-        'ForwardLeftDepthAvoidance': stateF(), 
-        'ForwardMidDepthAvoidance': stateF(), 
-        'ForwardRightDepthAvoidance': stateF(), 
+        'BackDepthAvoidance': stateBD, 
+        'ForwardLeftDepthAvoidance': stateF, 
+        'ForwardMidDepthAvoidance': stateF, 
+        'ForwardRightDepthAvoidance': stateF, 
         'DesperateTurn': 'DesperateTurn',
         }
     nextState= switcher.get(curState)
+    if curState=='Exploring':
+        nextState=stateExp()
+    elif curState=='BackDepthAvoidance':
+        nextState= stateBD()
+    elif curState== 'ForwardLeftDepthAvoidance' or curState== 'ForwardMidDepthAvoidance' or curState=='ForwardRightDepthAvoidance':
+        nextState= stateF()
+    elif curState=='DesperateTurn':
+        nextState= 'DesperateTurn'
     return nextState if not (nextState=='') else curState
 
-def motorBehaviour():
-    states = ['Exploring', 'BumperAvoidance', 'ObstacleAvoidance', 'BackDepthAvoidance', 'ForwardLeftDepthAvoidance', 'ForwardMidDepthAvoidance', 'ForwardRightDepthAvoidance', 'DesperateTurn']
-    curState= 'Exploring'
-    while True:
-        curState = determineState(curState)
-        switcher = { 
-            'Exploring': exploreMotor(),
-            'BumperAvoidance': bumperAvoid(), 
-            'ObstacleAvoidance':ObstacleAvoid(), 
-            'BackDepthAvoidance': backAvoid(), 
-            'ForwardLeftDepthAvoidance': forLefAvoid(), 
-            'ForwardMidDepthAvoidance': forMidAvoid(), 
-            'ForwardRightDepthAvoidance': forRightAvoid(), 
-            'DesperateTurn': despTurn(),
-            }
+def expMot(curTime):
+    global motSpeed
+    global backUnsafe
+    global forwardCLUnsafe
+    global forwardCRUnsafe
+    global forwardCMUnsafe
+    if time()-curTime<2:
+        motSpeed[0]=random.randint(5,15)
+        motSpeed[1]=random.randint(5,15)
+    elif time()-curTime>5:
+        curTime=time()
+    return curTime, 'Exploring'
+    
+def bdMot(curTime):
+    global motSpeed
+    global backUnsafe
+    global forwardCLUnsafe
+    global forwardCRUnsafe
+    global forwardCMUnsafe
+    if backUnsafe:
+        motSpeed=[10,10]
+        motSpeed[0]=10
+        motSpeed[1]=10
+        return curTime, 'BackDepthAvoidance'
+    motSpeed =[0,0]
+    return time(), 'Exploring'
+    
+def flMot(curTime):
+    global motSpeed
+    global backUnsafe
+    global forwardCLUnsafe
+    global forwardCRUnsafe
+    global forwardCMUnsafe
+    if forwardCLUnsafe:
+        motSpeed[0]=10
+        motSpeed[1]=-10
+        return curTime, 'ForwardLeftDepthAvoidance'
+    motSpeed =[0,0]
+    return time(), 'Exploring'
+    
+def fmMot(curTime):
+    global motSpeed
+    global backUnsafe
+    global forwardCLUnsafe
+    global forwardCRUnsafe
+    global forwardCMUnsafe
+    if forwardCMUnsafe:
+        motSpeed[0]=-10
+        motSpeed[1]=-10
+        return curTime, 'ForwardMidDepthAvoidance'
+    motSpeed =[0,0]
+    return time(), 'Exploring'
+    
+def frMot(curTime):
+    global motSpeed
+    global backUnsafe
+    global forwardCLUnsafe
+    global forwardCRUnsafe
+    global forwardCMUnsafe
+    if forwardCRUnsafe:
+        motSpeed[0]=-10
+        motSpeed[1]=10
+        return curTime, 'ForwardRightDepthAvoidance'
+    motSpeed =[0,0]
+    return time(), 'Exploring'
 
-colors_found = [False, False, False]
+def despTurn(curTime):
+    global motSpeed
+    global backUnsafe
+    global forwardCLUnsafe
+    global forwardCRUnsafe
+    global forwardCMUnsafe
+    if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):
+        motSpeed=[10,-10]
+        motSpeed[0]=10
+        motSpeed[1]=-10
+        return curTime, 'DesperateTurn'
+    motSpeed =[0,0]
+    return time(), 'Exploring'
+        
+
+def stateModerator():
+    global motSpeed
+    curState= 'Exploring'
+    nextState='Exploring'
+    curTime = time()
+    while True:
+        nextState = determineState(curState)
+        if nextState!=curState:
+            curTime = time()
+        if nextState=="Exploring":
+            curTime, curState=expMot(curTime)
+        elif nextState== "BackDepthAvoidance":
+            curTime, curState=bdMot(curTime)
+        elif nextState== "ForwardLeftDepthAvoidance":
+            curTime, curState=flMot(curTime)
+        elif nextState== "ForwardMidDepthAvoidance":
+            curTime, curState=fmMot(curTime)
+        elif nextState== "ForwardRightDepthAvoidance":
+            curTime, curState=frMot(curTime)
+        elif nextState== "DesperateTurn":
+            curTime, curState=despTurn(curTime)
+            
+        if ending:
+            break
+        sleep(0.1)
+            
+def sensorModerator():
+    # Sensors work, at least csLeft
+    global backUnsafe
+    global forwardCLUnsafe
+    global forwardCRUnsafe
+    global forwardCMUnsafe
+    while True:
+        new_colorLeft = csLeft.color
+        new_colorMid = csMid.color
+        new_colorRight = csRight.color
+        distance = us.value()/10
+        if new_colorLeft in stopColors:
+            forwardCLUnsafe=True
+        else:
+            forwardCLUnsafe=False
+        if new_colorMid in stopColors:
+            forwardCMUnsafe=True
+        else:
+            forwardCMUnsafe=False
+        if new_colorRight in stopColors:
+            forwardCRUnsafe=True
+        else:
+            forwardCRUnsafe=False
+        if distance>4:
+            backUnsafe=True
+        else:
+            backUnsafe=False
+        if ending:
+            break
+        sleep(0.1)
+        
+def motorModerator():
+    while True:
+        global motSpeed
+        left_motor.on_for_seconds(SpeedPercent(motSpeed[0]), 1,  block=False)
+        right_motor.on_for_seconds(SpeedPercent(motSpeed[1]), 1,  block=False)
+        if ending:
+            left_motor.stop()
+            right_motor.stop()
+            break
+        sleep(0.1)
+        
+
+global backUnsafe
+global forwardCLUnsafe
+global forwardCRUnsafe
+global forwardCMUnsafe
+
+print("Start!")
+backUnsafe=False
+forwardCLUnsafe=False
+forwardCRUnsafe=False
+forwardCMUnsafe=False
+
+global motLeftSpeed
+global motRightSpeed
+
+motorCommand = 'Stop'
+motSpeed =[0,0]
+ending= False
+
+stopColors= [0,2,3,5,6]
 left_motor = LargeMotor(OUTPUT_A)
 right_motor = LargeMotor(OUTPUT_D)
-tsLeft = TouchSensor(INPUT_1)
-tsRight = TouchSensor(INPUT_4)
+measurement_arm = Motor(OUTPUT_B)
+#tsLeft = TouchSensor(INPUT_1)
+#tsRight = TouchSensor(INPUT_4)
 leds = Leds()
 s = Sound()
 #s.speak("To infinity, but not beyond. Definitely not beyond")
-cs = ColorSensor()
-counter =50
-speedLeft=0
-speedRight=0
+csLeft = ColorSensor(INPUT_1)
+csMid = ColorSensor(INPUT_3)
+csRight = ColorSensor(INPUT_4)
 leds.set_color("LEFT", "GREEN")
 leds.set_color("RIGHT", "GREEN") 
 us = UltrasonicSensor() 
@@ -133,127 +316,19 @@ units = us.units
 distance = us.value()
 my_display = Display()
 my_display.clear()
-cs.calibrate_white()
 
-def recoverLine():
-    while cs.color==0 or cs.color==1:
-        left_motor.on_for_rotations(SpeedPercent(-10), 1,  block=False)
-        right_motor.on_for_rotations(SpeedPercent(-10), 1,  block=False)
-    left_motor.on_for_seconds(SpeedPercent(-10), 1,  block=False)
-    right_motor.on_for_seconds(SpeedPercent(-10), 1,  block=True)
-    left_motor.stop()
-    right_motor.stop()
-    choice = random.randint(1,3)
-    if choice==1:
-        left_motor.on_for_seconds(SpeedPercent(-20), 1, block=True)
-    else:
-        right_motor.on_for_seconds(SpeedPercent(-20), 1, block=True)
         
-def run():
-    sock, sock_in, sock_out = connect(server_mac, is_master)
-    listener = threading.Thread(target=listen, args=(sock_in))
-    listener.start()
-    while True:
-        if counter ==50:
-            print("hi")
-            counter =0
-            speedLeft=random.randint(10,30)
-            speedRight=random.randint(10,30)
-            print("bye")
-        else:
-            print("hi2")
-            counter+=1
-            print("bye1")
-        print("Past if statement")
-        left_motor.on_for_seconds(SpeedPercent(speedLeft), 10,  block=False)
-        right_motor.on_for_seconds(SpeedPercent(speedRight), 10,  block=False)
-        new_color = cs.color
-        distance = us.value()/10
-        print("I should be riding")
-        if new_color == 1:
-            left_motor.stop()
-            right_motor.stop()
-            leds.set_color("LEFT", "RED")
-            leds.set_color("RIGHT", "RED") 
-            recoverLine()
-            leds.set_color("LEFT", "GREEN")
-            leds.set_color("RIGHT", "GREEN") 
-            counter =0
-            speedLeft=random.randint(10,30)
-            speedRight=random.randint(10,30)
-        elif tsLeft.is_pressed:
-            left_motor.stop()
-            right_motor.stop()
-            leds.set_color("LEFT", "RED")
-            leds.set_color("RIGHT", "GREEN") 
-            left_motor.on_for_seconds(SpeedPercent(-10), 1,  block=False)
-            right_motor.on_for_seconds(SpeedPercent(-10), 1,  block=True)
-            right_motor.on_for_seconds(SpeedPercent(-20), 1, block=True)
-            leds.set_color("LEFT", "GREEN")
-            leds.set_color("RIGHT", "GREEN") 
-            speedLeft=20
-            speedRight=20
-            counter=-50
-        elif tsRight.is_pressed:
-            left_motor.stop()
-            right_motor.stop()
-            leds.set_color("LEFT", "GREEN")
-            leds.set_color("RIGHT", "RED") 
-            left_motor.on_for_seconds(SpeedPercent(-10), 1,  block=False)
-            right_motor.on_for_seconds(SpeedPercent(-10), 1,  block=True)
-            left_motor.on_for_seconds(SpeedPercent(-20), 1, block=True)
-            leds.set_color("LEFT", "GREEN")
-            leds.set_color("RIGHT", "GREEN") 
-            speedLeft=20
-            speedRight=20
-            counter=-50
-        elif distance<28:
-            left_motor.stop()
-            right_motor.stop()
-            print("Too close!")
-            leds.set_color("LEFT", "RED")
-            leds.set_color("RIGHT", "RED") 
-            #s.speak("No drinking on the mission")
-            left_motor.on_for_seconds(SpeedPercent(-10), 0.5,  block=False)
-            right_motor.on_for_seconds(SpeedPercent(-10), 0.5,  block=True)
-            choice = random.randint(1,3)
-            if choice==1:
-                left_motor.on_for_seconds(SpeedPercent(-20), 1, block=True)
-            else:
-                right_motor.on_for_seconds(SpeedPercent(-20), 1, block=True)
-            leds.set_color("LEFT", "GREEN")
-            leds.set_color("RIGHT", "GREEN") 
-            speedLeft=20
-            speedRight=20
-            counter=-50
-        if new_color == 2 and not colors_found[0]==True:
-            left_motor.stop()
-            right_motor.stop()
-            colors_found[0]=True
-            s.speak("Found Blue")
-            sendInfo(sock_out, 0)
-        if new_color == 4 and not colors_found[1]==True:
-            left_motor.stop()
-            right_motor.stop()
-            colors_found[1]=True
-            s.speak("Found Yellow")
-            sendInfo(sock_out, 1)
-        if new_color == 5 and not colors_found[2]==True:
-            left_motor.stop()
-            right_motor.stop()
-            colors_found[2]=True
-            s.speak("Found red")
-            sendInfo(sock_out, 2)
-        if all(colorF==True for colorF in colors_found):
-            left_motor.stop()
-            right_motor.stop()
-            break
-    busy=False
-    disconnect(sock_in)
-    disconnect(sock_out)
-    disconnect(sock)
-    s.speak("Mission complete")
-        
-run()
-    
+senMod = threading.Thread(target=sensorModerator, args=())
+statMod = threading.Thread(target=stateModerator, args=())
+motMod = threading.Thread(target=motorModerator, args=())
+senMod.start()
+sleep(1)
+statMod.start()
+motMod.start()
+sleep(20)
+ending=True
+sleep(5)
+
+
+
     
