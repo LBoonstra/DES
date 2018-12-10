@@ -16,48 +16,353 @@ import dsl.finalproject.fp.Task
 import dsl.finalproject.fp.TimeObject
 import dsl.finalproject.fp.TrackingOptions
 import dsl.finalproject.fp.UseObstacle
+import dsl.finalproject.fp.Mission
 
 class PythonGenerator {
 	def static toPy(Task root){
 		'''
-		#!/usr/bin/env python3
-		«"\n"»
-		«onStartUp()»
-		«mission2Text(root.mission)»
+		«imports()»«"\n"»
+		«doNotFallOff()»«"\n"»
+		«colorAvoid()»«"\n"»
+		«motorModerator()»«"\n"»
+		«sensor2Text(root.mission)»«"\n"»
+		«speedDef(root.mission)»
+		«mainThread()»
 		'''
 	}
-	def static onStartUp()'''
-		from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_D, SpeedPercent«"\n"»
+	
+	def static dispatch speedDef(DoNothingMission Mission)'''
+		global standardSpeed«"\n"»
+		standardSpeed =0
+	'''
+	
+	def static dispatch speedDef(DriveMission Mission)'''
+		«normSpeedDef(Mission.speed)»
+		'''
+	
+	def static normSpeedDef(SpeedOptions speed)'''
+	global standardSpeed«"\n"»
+	standardSpeed = «toText(speed)»
+	'''
+	
+	def static imports()'''
+		from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_D, OUTPUT_B, SpeedPercent, Motor«"\n"»
 		from ev3dev2.sound import Sound«"\n"»
 		from ev3dev2.display import Display«"\n"»
 		from ev3dev2.sensor.lego import ColorSensor«"\n"»
 		from ev3dev2.sensor.lego import TouchSensor«"\n"»
-		from ev3dev2._platform.ev3 import INPUT_4, INPUT_1«"\n"»
+		from ev3dev2._platform.ev3 import INPUT_4, INPUT_1, INPUT_2, INPUT_3«"\n"»
 		from ev3dev2.led import Leds«"\n"»
 		from ev3dev2.sensor.lego import UltrasonicSensor«"\n"»
 		import random«"\n"»
-		import time«"\n"»
+		import bluetooth, threading«"\n"»
+		from time import sleep«"\n"»
+		from time import time«"\n"»
+	'''
+	
+	def static mainThread()'''
+		global backUnsafe«"\n"»
+		global forwardCLUnsafe«"\n"»
+		global forwardCRUnsafe«"\n"»
+		global forwardCMUnsafe«"\n"»
 		«"\n"»
+		print("Start!")«"\n"»
+		backUnsafe=False«"\n"»
+		forwardCLUnsafe=False«"\n"»
+		forwardCRUnsafe=False«"\n"»
+		forwardCMUnsafe=False«"\n"»
+		«"\n"»
+		global motLeftSpeed«"\n"»
+		global motRightSpeed«"\n"»
+		«"\n"»
+		motorCommand = 'Stop'«"\n"»
+		motSpeed =[0,0]«"\n"»
+		ending= False«"\n"»
+		«"\n"»
+		stopColors= [0,2,3,5,6]«"\n"»
 		left_motor = LargeMotor(OUTPUT_A)«"\n"»
 		right_motor = LargeMotor(OUTPUT_D)«"\n"»
-		tsLeft = TouchSensor(INPUT_1)«"\n"»
-		tsRight = TouchSensor(INPUT_4)«"\n"»
+		measurement_arm = Motor(OUTPUT_B)«"\n"»
 		leds = Leds()«"\n"»
 		s = Sound()«"\n"»
-		cs = ColorSensor()«"\n"»
-		speedLeft=0«"\n"»
-		speedRight=0«"\n"»
+		csLeft = ColorSensor(INPUT_1)«"\n"»
+		csMid = ColorSensor(INPUT_3)«"\n"»
+		csRight = ColorSensor(INPUT_4)«"\n"»
 		leds.set_color("LEFT", "GREEN")«"\n"»
-		leds.set_color("RIGHT", "GREEN") «"\n"»
+		leds.set_color("RIGHT", "GREEN")«"\n"»
 		us = UltrasonicSensor()«"\n"»
 		us.mode = 'US-DIST-CM'«"\n"»
 		units = us.units«"\n"»
 		distance = us.value()«"\n"»
 		my_display = Display()«"\n"»
 		my_display.clear()«"\n"»
-		cs.calibrate_white()«"\n"»
-		currenttime = int(time.time())«"\n"»
+		«"\n"»
+		senMod = threading.Thread(target=sensorModerator, args=())«"\n"»
+		statMod = threading.Thread(target=stateModerator, args=())«"\n"»
+		motMod = threading.Thread(target=motorModerator, args=())«"\n"»
+		senMod.start()«"\n"»
+		sleep(1)«"\n"»
+		statMod.start()«"\n"»
+		motMod.start()«"\n"»
+		sleep(20)«"\n"»
+		ending=True«"\n"»
+		sleep(5)«"\n"»
 	'''
+	
+	def static doNotFallOff()'''
+		def doNotFallOff():«"\n"»
+		«"\t"»global backUnsafe«"\n"»
+		«"\t"»global forwardCLUnsafe«"\n"»
+		«"\t"»global forwardCRUnsafe«"\n"»
+		«"\t"»global forwardCMUnsafe«"\n"»
+		«"\t"»new_colorLeft = csLeft.color«"\n"»
+		«"\t"»new_colorMid = csMid.color«"\n"»
+		«"\t"»new_colorRight = csRight.color«"\n"»
+		«"\t"»distance = us.value()/10«"\n"»
+		«"\t"»if new_colorLeft==0:«"\n"»
+		«"\t"»«"\t"»forwardCLUnsafe=True«"\n"»
+		«"\t"»else:«"\n"»
+		«"\t"»«"\t"»forwardCLUnsafe=False«"\n"»
+		«"\t"»if new_colorMid==0:«"\n"»
+		«"\t"»«"\t"»forwardCMUnsafe=True«"\n"»
+		«"\t"»else:«"\n"»
+		«"\t"»«"\t"»forwardCMUnsafe=False«"\n"»
+		«"\t"»if new_colorRight==0:«"\n"»
+		«"\t"»«"\t"»forwardCRUnsafe=True«"\n"»
+		«"\t"»else:«"\n"»
+		«"\t"»«"\t"»forwardCRUnsafe=False«"\n"»
+		«"\t"»if distance>4:«"\n"»
+		«"\t"»«"\t"»backUnsafe=True«"\n"»
+		«"\t"»else:«"\n"»
+		«"\t"»«"\t"»backUnsafe=False«"\n"»
+	'''
+	
+	def static motorModerator()'''
+		def motorModerator():
+		    while True:
+		        global motSpeed
+		        left_motor.on_for_seconds(SpeedPercent(motSpeed[0]), 1,  block=False)
+		        right_motor.on_for_seconds(SpeedPercent(motSpeed[1]), 1,  block=False)
+		        if ending:
+		            left_motor.stop()
+		            right_motor.stop()
+		            break
+		        sleep(0.1)
+	'''
+	
+	def static colorAvoid()'''
+	def colorAvoid(color):«"\n"»
+	«"\t"»global forwardCLUnsafe«"\n"»
+	«"\t"»global forwardCRUnsafe«"\n"»
+	«"\t"»global forwardCMUnsafe«"\n"»
+	«"\t"»new_colorLeft = csLeft.color«"\n"»
+	«"\t"»new_colorMid = csMid.color«"\n"»
+	«"\t"»new_colorRight = csRight.color«"\n"»
+	«"\t"»if new_colorLeft==color:«"\n"»
+	«"\t"»«"\t"»forwardCLUnsafe=True«"\n"»
+	«"\t"»else:«"\n"»
+	«"\t"»«"\t"»forwardCLUnsafe=False«"\n"»
+	«"\t"»if new_colorMid==color:«"\n"»
+	«"\t"»«"\t"»forwardCMUnsafe=True«"\n"»
+	«"\t"»else:«"\n"»
+	«"\t"»«"\t"»forwardCMUnsafe=False«"\n"»
+	«"\t"»if new_colorRight==color:«"\n"»
+	«"\t"»«"\t"»forwardCRUnsafe=True«"\n"»
+	«"\t"»else:«"\n"»
+	«"\t"»«"\t"»forwardCRUnsafe=False«"\n"»
+	'''
+	
+	def static stateSwitch()'''
+	def stateExp():«"\n"»
+	«"\t"»global backUnsafe«"\n"»
+	«"\t"»global forwardCLUnsafe«"\n"»
+	«"\t"»global forwardCRUnsafe«"\n"»
+	«"\t"»global forwardCMUnsafe«"\n"»
+	«"\t"»if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):«"\n"»
+	«"\t"»«"\t"»return 'DesperateTurn'«"\n"»
+	«"\t"»elif backUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'BackDepthAvoidance'«"\n"»
+	«"\t"»elif forwardCMUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'ForwardMidDepthAvoidance'«"\n"»
+	«"\t"»elif forwardCLUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'ForwardLeftDepthAvoidance'«"\n"»
+	«"\t"»elif forwardCRUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'ForwardRightDepthAvoidance'«"\n"»
+	«"\t"»return ''«"\n"»
+	«"\n"»
+	def stateF():«"\n"»
+	«"\t"»global backUnsafe«"\n"»
+	«"\t"»global forwardCLUnsafe«"\n"»
+	«"\t"»global forwardCRUnsafe«"\n"»
+	«"\t"»global forwardCMUnsafe«"\n"»
+	«"\t"»if backUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'DesperateTurn'«"\n"»
+	«"\t"»else:«"\n"»
+	«"\t"»«"\t"»return ''«"\n"»
+	«"\n"»
+	def stateBD():«"\n"»
+	«"\t"»global backUnsafe«"\n"»
+	«"\t"»global forwardCLUnsafe«"\n"»
+	«"\t"»global forwardCRUnsafe«"\n"»
+	«"\t"»global forwardCMUnsafe«"\n"»
+	«"\t"»if forwardCLUnsafe or forwardCRUnsafe or forwardCMUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'DesperateTurn'«"\n"»
+	«"\t"»else:«"\n"»
+	«"\t"»«"\t"»return ''«"\n"»
+	«"\n"»
+    '''
+
+    
+    def static dispatch state2Text(DriveMission Mission)'''
+    def determineState(curState):
+        if curState=='Exploring':
+            nextState=stateExp()
+        elif curState=='BackDepthAvoidance':
+            nextState= stateBD()
+        elif curState== 'ForwardLeftDepthAvoidance' or curState== 'ForwardMidDepthAvoidance' or curState=='ForwardRightDepthAvoidance':
+            nextState= stateF()
+        elif curState=='DesperateTurn':
+            nextState= 'DesperateTurn'
+        return nextState if not (nextState=='') else curState
+    
+    def expMot(curTime):
+        global motSpeed
+        global backUnsafe
+        global forwardCLUnsafe
+        global forwardCRUnsafe
+        global forwardCMUnsafe
+        if time()-curTime<2:
+            motSpeed[0]=random.randint(5,15)
+            motSpeed[1]=random.randint(5,15)
+        elif time()-curTime>5:
+            curTime=time()
+        return curTime, 'Exploring'
+        
+    def bdMot(curTime):
+        global motSpeed
+        global backUnsafe
+        global forwardCLUnsafe
+        global forwardCRUnsafe
+        global forwardCMUnsafe
+        if backUnsafe:
+            motSpeed=[10,10]
+            motSpeed[0]=10
+            motSpeed[1]=10
+            return curTime, 'BackDepthAvoidance'
+        motSpeed =[0,0]
+        return time(), 'Exploring'
+        
+    def flMot(curTime):
+        global motSpeed
+        global backUnsafe
+        global forwardCLUnsafe
+        global forwardCRUnsafe
+        global forwardCMUnsafe
+        if forwardCLUnsafe:
+            motSpeed[0]=10
+            motSpeed[1]=-10
+            return curTime, 'ForwardLeftDepthAvoidance'
+        motSpeed =[0,0]
+        return time(), 'Exploring'
+        
+    def fmMot(curTime):
+        global motSpeed
+        global backUnsafe
+        global forwardCLUnsafe
+        global forwardCRUnsafe
+        global forwardCMUnsafe
+        if forwardCMUnsafe:
+            motSpeed[0]=-10
+            motSpeed[1]=-10
+            return curTime, 'ForwardMidDepthAvoidance'
+        motSpeed =[0,0]
+        return time(), 'Exploring'
+        
+    def frMot(curTime):
+        global motSpeed
+        global backUnsafe
+        global forwardCLUnsafe
+        global forwardCRUnsafe
+        global forwardCMUnsafe
+        if forwardCRUnsafe:
+            motSpeed[0]=-10
+            motSpeed[1]=10
+            return curTime, 'ForwardRightDepthAvoidance'
+        motSpeed =[0,0]
+        return time(), 'Exploring'
+    
+    def despTurn(curTime):
+        global motSpeed
+        global backUnsafe
+        global forwardCLUnsafe
+        global forwardCRUnsafe
+        global forwardCMUnsafe
+        if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):
+            motSpeed=[10,-10]
+            motSpeed[0]=10
+            motSpeed[1]=-10
+            return curTime, 'DesperateTurn'
+        motSpeed =[0,0]
+        return time(), 'Exploring'
+            
+    
+    def stateModerator():
+        global motSpeed
+        curState= 'Exploring'
+        nextState='Exploring'
+        curTime = time()
+        while True:
+            nextState = determineState(curState)
+            if nextState!=curState:
+                curTime = time()
+            if nextState=="Exploring":
+                curTime, curState=expMot(curTime)
+            elif nextState== "BackDepthAvoidance":
+                curTime, curState=bdMot(curTime)
+            elif nextState== "ForwardLeftDepthAvoidance":
+                curTime, curState=flMot(curTime)
+            elif nextState== "ForwardMidDepthAvoidance":
+                curTime, curState=fmMot(curTime)
+            elif nextState== "ForwardRightDepthAvoidance":
+                curTime, curState=frMot(curTime)
+            elif nextState== "DesperateTurn":
+                curTime, curState=despTurn(curTime)
+                
+            if ending:
+                break
+            sleep(0.1)
+    '''
+	
+	def static dispatch sensor2Text(DriveMission Mission)'''
+		def sensorModerator():«"\n"»
+		«"\t"»while True:
+		«"\t"»«"\t"»doNotFallOff()
+		«"\t"»«"\t"»if «FOR stpc : Mission.stopcons SEPARATOR " or " AFTER ":"»«stopCon2Text(stpc)»«ENDFOR»«"\n"»
+		«"\t"»«"\t"»«"\t"»break«"\n"»
+		«IF Mission.avoid !== null»
+		«FOR avoidC : Mission.avoid»
+		«avoidToText(avoidC)»
+		«ENDFOR»
+		«ENDIF»
+		«"\t"»ending=True«"\n"»
+		'''
+	
+	def static dispatch sensor2Text(DoNothingMission Mission)'''
+		def sensorModerator():«"\n"»
+		«"\t"»while (int(time.time())-currenttime)>«Mission.time»:«"\n"»
+		«IF Mission.offB !== null»
+		«"\t"»«"\t"»if «FOR btnElement : Mission.offB SEPARATOR " or " AFTER ":"»«toText(btnElement.buttons)»«ENDFOR»«"\n"»
+		«"\t"»«"\t"»«"\t"»break«"\n"»«ENDIF»
+		«"\t"»«"\t"»sleep(0.01)«"\n"»
+		«"\t"»ending=True«"\n"»
+		'''
+		
+	def static dispatch avoidToText(UseObstacle avoidC)''''''
+	
+	def static dispatch avoidToText(ColorWithName avoidC)'''
+	«"\t"»«"\t"»colorAvoid(«toText(avoidC.color)»)«"\n"»
+	'''
+
 	def static dispatch mission2Text(DriveMission mission)'''
 		while (True):«"\n"» 
 		«"\t"»speed = «toText(mission.speed)»«"\n"»
@@ -182,11 +487,11 @@ class PythonGenerator {
 	}
 
 		def static leftMotor()'''
-			«"\t"»left_motor.on_for_seconds(SpeedPercent(speed), 10,  block=False)«"\n"»
-			«"\t"»right_motor.on_for_seconds(SpeedPercent(-speed), 10,  block=False)«"\n"»
+			«"\t"»left_motor.on_for_seconds(SpeedPercent(speed), 1,  block=False)«"\n"»
+			«"\t"»right_motor.on_for_seconds(SpeedPercent(-speed), 1,  block=False)«"\n"»
 		'''
 		def static rightMotor()'''
-			«"\t"»left_motor.on_for_seconds(SpeedPercent(-speed), 10,  block=False)«"\n"»
+			«"\t"»left_motor.on_for_seconds(SpeedPercent(-speed), 1,  block=False)«"\n"»
 			«"\t"»right_motor.on_for_seconds(SpeedPercent(speed), 10,  block=False)«"\n"»
 		'''
 		def static forwardMotor()'''
@@ -198,15 +503,11 @@ class PythonGenerator {
 			«"\t"»right_motor.on_for_seconds(SpeedPercent(-speed), 10,  block=False)«"\n"»
 		'''
 		def static randomMotor()'''
-			«"\t"»counter=0«"\n"»
-			«"\t"»if counter>50:«"\n"»
-			«"\t"»«"\t"»speedLeft=random.randint(speed/2,speed*2)«"\n"»
-			«"\t"»«"\t"»speedRight=random.randint(speed/2,speed*2)«"\n"»
-			«"\t"»«"\t"»counter=0«"\n"»
-			«"\t"»else:«"\n"»
-			«"\t"»«"\t"»counter+=1«"\n"»
-			«"\t"»left_motor.on_for_seconds(SpeedPercent(speedLeft), 10,  block=False)«"\n"»
-			«"\t"»right_motor.on_for_seconds(SpeedPercent(speedRight), 10,  block=False)«"\n"»
+			«"\t"»if time()-curTime<2:«"\n"»
+			«"\t"»«"\t"»motSpeed[0]=random.randint(5,15)«"\n"»
+			«"\t"»«"\t"»motSpeed[1]=random.randint(5,15)«"\n"»
+			«"\t"»elif time()-curTime>5:«"\n"»
+			«"\t"»«"\t"»curTime=time()«"\n"»
 		'''
 	
 		def static avoidFunction()'''

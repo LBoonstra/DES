@@ -7,7 +7,7 @@ Task: 'Task:' mission=Mission;
 Mission: DriveMission | DoNothingMission |FindLakesMission |FollowLineMission|BrickMission;
 
 DoNothingMission: 'DoNothing:' time = INT
-	'OffButton:' offB += Buttons*
+	('OffButton:' offB += Buttons*)?
 ;
 BrickMission: 'speed:'speed = SpeedOptions
 	'stopconditions:' stopcons += StopOptions*
@@ -92,6 +92,5 @@ enum Button:
 	MID = 'mid'|
 	RIGHT = 'right'|
 	DOWN = 'down'|
-	ANY = 'any'|
-	BACK = 'back'
+	ANY = 'any'
 ;
