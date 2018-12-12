@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "<string>", line 3, in connect
+_bluetooth.error: (113, 'No route to host')
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/robot/Rover.py", line 340, in <module>
+    sock, sock_in, sock_out = connect(server_mac)
+  File "/home/robot/Rover.py", line 20, in connect
+    sock.connect((server_mac, port))
+  File "<string>", line 5, in connect
+bluetooth.btcommon.BluetoothError: (113, 'No route to host')

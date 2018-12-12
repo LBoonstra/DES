@@ -20,5 +20,6 @@ class FpGenerator extends AbstractGenerator {
 		val root = resource.allContents.head as Task;
 		if (root !== null)
 			fsa.generateFile("Rover.py", PythonGenerator.toPy(root));
+			fsa.generateFile("RoverSlave.py", FpSlaveGenerator.toPy(root));
 	}
 }
