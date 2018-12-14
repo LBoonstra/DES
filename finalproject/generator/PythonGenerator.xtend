@@ -79,6 +79,9 @@ class PythonGenerator {
 		forwardCLUnsafe=False«"\n"»
 		forwardCRUnsafe=False«"\n"»
 		forwardCMUnsafe=False«"\n"»
+		leftBumperUnsafe=False«"\n"»
+		rightBumperUnsafe=False«"\n"»
+		forwardSonarUnsafe=False«"\n"»
 		«"\n"»
 		global motLeftSpeed«"\n"»
 		global motRightSpeed«"\n"»
@@ -106,12 +109,12 @@ class PythonGenerator {
 		my_display = Display()«"\n"»
 		my_display.clear()«"\n"»
 		«"\n"»
-		server_mac = 'CC:78:AB:50:B2:46'«"\n"»
+		server_mac = '00:17:E9:B2:F2:93'«"\n"»
 		sock, sock_in, sock_out = connect(server_mac)«"\n"»
 		senMod = threading.Thread(target=sensorModerator, args=())«"\n"»
 		statMod = threading.Thread(target=stateModerator, args=())«"\n"»
 		motMod = threading.Thread(target=motorModerator, args=())«"\n"»
-		blueMod = threading.Thread(target=listen, args(sock_in,))«"\n"»
+		blueMod = threading.Thread(target=listen, args=(sock_in,))«"\n"»
 		blueMod.start()«"\n"»
 		senMod.start()«"\n"»
 		sleep(1)«"\n"»
@@ -119,28 +122,31 @@ class PythonGenerator {
 		motMod.start()«"\n"»
 		senMod.join()«"\n"»
 		sendInfo(sock_out, 2)«"\n"»
-		statMod.join()«"\n"»
-		motMod.join()«"\n"»
+		blueMod.join()«"\n"»
 		disconnect(sock_in)«"\n"»
 		disconnect(sock_out)«"\n"»
 		disconnect(sock)«"\n"»
-		sleep(5)«"\n"»
+		statMod.join()«"\n"»
+		motMod.join()«"\n"»
 		print("Finished")«"\n"»
+		sleep(5)«"\n"»
 	'''
 	
 	def static blueToothCode()'''
 		def connect(server_mac):«"\n"»
 		«"\t"»port = 3«"\n"»
-		«"\t"»sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)«"\n"»
-		«"\t"»print('Connecting...')«"\n"»
-		«"\t"»sock.connect((server_mac, port))«"\n"»
-		«"\t"»print('Connected to ', server_mac)«"\n"»
-		«"\t"»return sock, sock.makefile('r'), sock.makefile('w')«"\n"»
+		«"\t"»server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)«"\n"»
+		«"\t"»server_sock.bind((server_mac, port))«"\n"»
+		«"\t"»server_sock.listen(1)«"\n"»
+		«"\t"»print('Listening...')«"\n"»
+		«"\t"»client_sock, address = server_sock.accept()«"\n"»
+		«"\t"»print('Accepted connection from ', address)«"\n"»
+		«"\t"»return client_sock, client_sock.makefile('r'), client_sock.makefile('w')«"\n"»
 		«"\n"»
 		def disconnect(sock):«"\n"»
 		«"\t"»sock.close()«"\n"»
 		«"\n"»
-		def listen(sock_in, sock_out):«"\n"»
+		def listen(sock_in):«"\n"»
 		«"\t"»global ending«"\n"»
 		«"\t"»global leftBumperUnsafe
 		«"\t"»global rightBumperUnsafe«"\n"»
@@ -151,21 +157,32 @@ class PythonGenerator {
 		«"\t"»«"\t"»if data==1:«"\n"»
 		«"\t"»«"\t"»«"\t"»leftBumperUnsafe=True«"\n"»
 		«"\t"»«"\t"»«"\t"»print("Left hit")«"\n"»
-		«"\t"»«"\t"»elif data==2:«"\n"»
+		«"\t"»«"\t"»if data==2:«"\n"»
+		«"\t"»«"\t"»«"\t"»leftBumperUnsafe=False«"\n"»
+		«"\t"»«"\t"»«"\t"»print("Left no longer hit")«"\n"»
+		«"\t"»«"\t"»elif data==3:«"\n"»
 		«"\t"»«"\t"»«"\t"»rightBumperUnsafe=True«"\n"»
 		«"\t"»«"\t"»«"\t"»print("right hit")«"\n"»
-		«"\t"»«"\t"»elif data==3:«"\n"»
+		«"\t"»«"\t"»elif data==4:«"\n"»
+		«"\t"»«"\t"»«"\t"»rightBumperUnsafe=False«"\n"»
+		«"\t"»«"\t"»«"\t"»print("right no longer hit")«"\n"»
+		«"\t"»«"\t"»elif data==5:«"\n"»
 		«"\t"»«"\t"»«"\t"»forwardSonarUnsafe=True«"\n"»
 		«"\t"»«"\t"»«"\t"»print("sonar hit. Somehow. Not quite sure how.")«"\n"»
+		«"\t"»«"\t"»elif data==6:«"\n"»
+		«"\t"»«"\t"»«"\t"»forwardSonarUnsafe=False«"\n"»
+		«"\t"»«"\t"»«"\t"»print("sonar no longer hit. That makes more sense")«"\n"»
+		«"\t"»«"\t"»elif data==7:«"\n"»
+		«"\t"»«"\t"»«"\t"»print("Other one is ending, I will end now too")«"\n"»
 		«"\t"»«"\t"»sleep(1)«"\n"»
-		«"\t"»«"\t"»if ending:
-		«"\t"»«"\t"»«"\t"»break
+		«"\t"»«"\t"»if ending:«"\n"»
+		«"\t"»«"\t"»«"\t"»break«"\n"»
 		«"\n"»
 		def sendInfo(sock_out, message):«"\n"»
-		«"\t"»sock_out.write(message)«"\n"»
+		«"\t"»sock_out.write(str(message)+ '\n')«"\n"»
 		«"\t"»sock_out.flush()«"\n"»
 		'''
-	
+
 	def static doNotFallOff()'''
 		def doNotFallOff():«"\n"»
 		«"\t"»global backUnsafe«"\n"»
@@ -242,6 +259,59 @@ class PythonGenerator {
 	«"\t"»global forwardCLUnsafe«"\n"»
 	«"\t"»global forwardCRUnsafe«"\n"»
 	«"\t"»global forwardCMUnsafe«"\n"»
+	«"\t"»global leftBumperUnsafe«"\n"»
+	«"\t"»global rightBumperUnsafe«"\n"»
+	«"\t"»global forwardSonarUnsafe«"\n"»
+	«"\t"»if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):«"\n"»
+	«"\t"»«"\t"»return 'DesperateTurn'«"\n"»
+	«"\t"»elif backUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'BackDepthAvoidance'«"\n"»
+	«"\t"»elif forwardCMUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'ForwardMidDepthAvoidance'«"\n"»
+	«"\t"»elif forwardCLUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'ForwardLeftDepthAvoidance'«"\n"»
+	«"\t"»elif forwardCRUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'ForwardRightDepthAvoidance'«"\n"»
+	«"\t"»elif leftBumperUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'LeftBumperAvoidance'«"\n"»
+	«"\t"»elif rightBumperUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'RightBumperAvoidance'«"\n"»
+	«"\t"»elif forwardSonarUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'ForwardDepthAvoidance'«"\n"»
+	«"\t"»return ''«"\n"»
+	«"\n"»
+	def stateObstacle():
+	«"\t"»global backUnsafe«"\n"»
+	«"\t"»global forwardCLUnsafe«"\n"»
+	«"\t"»global forwardCRUnsafe«"\n"»
+	«"\t"»global forwardCMUnsafe«"\n"»
+	«"\t"»global leftBumperUnsafe«"\n"»
+	«"\t"»global rightBumperUnsafe«"\n"»
+	«"\t"»global forwardSonarUnsafe«"\n"»
+	«"\t"»if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):«"\n"»
+	«"\t"»«"\t"»return 'DesperateTurn'«"\n"»
+	«"\t"»elif backUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'BackDepthAvoidance'«"\n"»
+	«"\t"»elif forwardCMUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'ForwardMidDepthAvoidance'«"\n"»
+	«"\t"»elif forwardCLUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'ForwardLeftDepthAvoidance'«"\n"»
+	«"\t"»elif forwardCRUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'ForwardRightDepthAvoidance'«"\n"»
+	«"\t"»elif leftBumperUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'LeftBumperAvoidance'«"\n"»
+	«"\t"»elif rightBumperUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'RightBumperAvoidance'«"\n"»
+	«"\t"»return ''«"\n"»
+	«"\n"»
+	def stateBumper():
+	«"\t"»global backUnsafe«"\n"»
+	«"\t"»global forwardCLUnsafe«"\n"»
+	«"\t"»global forwardCRUnsafe«"\n"»
+	«"\t"»global forwardCMUnsafe«"\n"»
+	«"\t"»global leftBumperUnsafe«"\n"»
+	«"\t"»global rightBumperUnsafe«"\n"»
+	«"\t"»global forwardSonarUnsafe«"\n"»
 	«"\t"»if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):«"\n"»
 	«"\t"»«"\t"»return 'DesperateTurn'«"\n"»
 	«"\t"»elif backUnsafe:«"\n"»
@@ -282,6 +352,10 @@ class PythonGenerator {
     def determineState(curState):
         if curState=='Exploring':
             nextState=stateExp()
+        elif curState=='ForwardDepthAvoidance':
+        	nextState = stateObstacle()
+        elif curState=='RightBumperAvoidance' or curState=='LeftBumperAvoidance':
+        	nextState = stateBumper()
         elif curState=='BackDepthAvoidance':
             nextState= stateBD()
         elif curState== 'ForwardLeftDepthAvoidance' or curState== 'ForwardMidDepthAvoidance' or curState=='ForwardRightDepthAvoidance':
@@ -344,7 +418,7 @@ class PythonGenerator {
         elif (int(time()) - curTime)<0.5:
             motSpeed[0]=5
             motSpeed[1]=-5
-            return curTime, 'ForwardLeftDepthAvoidance'
+            return curTime, 'ForwardMidDepthAvoidance'
         motSpeed =[0,0]
         return time(), 'Exploring'
         
@@ -362,7 +436,58 @@ class PythonGenerator {
         elif (int(time()) - curTime)<0.5:
             motSpeed[0]=-5
             motSpeed[1]=5
-            return curTime, 'ForwardLeftDepthAvoidance'
+            return curTime, 'ForwardRightDepthAvoidance'
+        motSpeed =[0,0]
+        return time(), 'Exploring'
+        
+    def lbMot(curTime):
+            global motSpeed
+            global leftBumperUnsafe«"\n"»
+            global rightBumperUnsafe«"\n"»
+            global forwardSonarUnsafe«"\n"»
+            if leftBumperUnsafe:
+                motSpeed[0]=-standardSpeed
+                motSpeed[1]=-standardSpeed
+                curTime=time()
+                return curTime, 'LeftBumperAvoidance'
+            elif (int(time()) - curTime)<0.5:
+            	motSpeed[0]=5
+            	motSpeed[1]=-5
+            	return curTime, 'LeftBumperAvoidance'
+            motSpeed =[0,0]
+            return time(), 'Exploring'
+            
+    def fdMot(curTime):
+        global motSpeed
+        global leftBumperUnsafe«"\n"»
+        global rightBumperUnsafe«"\n"»
+        global forwardSonarUnsafe«"\n"»
+        if forwardSonarUnsafe:
+            motSpeed[0]=-standardSpeed
+            motSpeed[1]=-standardSpeed
+            curTime=time()
+            return curTime, 'ForwardDepthAvoidance'
+        elif (int(time()) - curTime)<0.5:
+            motSpeed[0]=5
+            motSpeed[1]=-5
+            return curTime, 'ForwardDepthAvoidance'
+        motSpeed =[0,0]
+        return time(), 'Exploring'
+            
+    def rbMot(curTime):
+        global motSpeed
+        global leftBumperUnsafe«"\n"»
+        global rightBumperUnsafe«"\n"»
+        global forwardSonarUnsafe«"\n"»
+        if rightBumperUnsafe:
+            motSpeed[0]=-standardSpeed
+            motSpeed[1]=-standardSpeed
+            curTime=time()
+            return curTime, 'RightBumperAvoidance'
+        elif (int(time()) - curTime)<0.5:
+            motSpeed[0]=-5
+            motSpeed[1]=5
+            return curTime, 'RightBumperAvoidance'
         motSpeed =[0,0]
         return time(), 'Exploring'
     
@@ -391,6 +516,12 @@ class PythonGenerator {
     «"\t"»«"\t"»«"\t"»curTime = time()«"\n"»
     «"\t"»«"\t"»if nextState=="Exploring":«"\n"»
     «"\t"»«"\t"»«"\t"»curTime, curState=expMot(curTime)«"\n"»
+    «"\t"»«"\t"»elif nextState=="LeftBumperAvoidance":
+    «"\t"»«"\t"»«"\t"»curTime, curState = lbMot(curTime)
+    «"\t"»«"\t"»elif nextState=="RightBumperAvoidance":
+    «"\t"»«"\t"»«"\t"»curTime, curState = rbMot(curTime)
+    «"\t"»«"\t"»elif nextState=="ForwardDepthAvoidance":
+    «"\t"»«"\t"»«"\t"»curTime, curState = fdMot(curTime)
     «"\t"»«"\t"»elif nextState== "BackDepthAvoidance":«"\n"»
     «"\t"»«"\t"»«"\t"»curTime, curState=bdMot(curTime)«"\n"»
     «"\t"»«"\t"»elif nextState== "ForwardLeftDepthAvoidance":«"\n"»
