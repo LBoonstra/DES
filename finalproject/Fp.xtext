@@ -2,9 +2,9 @@ grammar dsl.finalproject.Fp with org.eclipse.xtext.common.Terminals
 
 generate fp "http://www.finalproject.dsl/Fp"
 
-Task: 'Task:' mission=Mission;
+Task: 'Task:' mission+=Mission+;
 
-Mission: DriveMission | DoNothingMission |FindLakesMission |FollowLineMission|BrickMission;
+Mission: DriveMission | DoNothingMission |FindLakesMission |BrickMission;
 
 DoNothingMission: 'DoNothing:' time = INT
 	('OffButton:' offB += Buttons*)?
