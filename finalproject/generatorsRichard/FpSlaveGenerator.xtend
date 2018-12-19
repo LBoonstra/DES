@@ -110,7 +110,7 @@ class FpSlaveGenerator {
 	def static mainThread()'''
 		global ending«"\n"»
 		ending=False«"\n"»
-		server_mac = 'CC:78:AB:50:B2:46'«"\n"»
+		server_mac = '00:17:E9:B4:C7:63'«"\n"»
 		is_master=False«"\n"»
 		sock, sock_in, sock_out = connect(server_mac)«"\n"»
 		blueListener = threading.Thread(target=listen, args=(sock_in,))«"\n"»
