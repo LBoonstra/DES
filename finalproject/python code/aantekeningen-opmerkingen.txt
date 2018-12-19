@@ -1,3 +1,28 @@
 -groen is ook wit..
 met wielen links of rechts kan de robot door een meer rijden, maar indien de robot recht over een meer probeert te rijden komt het achterwiel vast te zitten. 
 -detecteert veel blokken niet meer als ze omgevallen zijn, dus zeker er van zijn dat de blokken van de wereld worden afgeduwt kan niet.
+
+05/12:
+Left color sensor.. brick 11.
+Rood is altijd rood
+Blauw is volgens de sensor blauw of groen.
+Groen is blauw, bruin of geel..
+richting afgrond: No color
+lake: black.
+
+12/12:
+left color sensor, brick 11
+White: half : blue.. Ziet later pas white. Als er over de lijn wordt gereden dan eerst ook nog groen voordat het no colors aangeeft.
+Rood: rood is rood, maar soms ziet het eerst nog black als het halverwege is, en een enkele keer bruin.
+Groen: Niet groen. Wel blauw, bruin, geel.
+Blauw: Blauw, groen, ..soms nog zwart, afhankelijk v sensor positie.
+
+
+Bugs/ verbeteringen:
+-kleuren.
+-in avoid schokkerig achteruit rijden.
+
+Vraag voor 19/12:
+-Is het betere om in de validation een error te geven, of kan dit beter predefined zijn, dat de standaard setting is dat de meren in avoid zitten?
+-Hoe gaat het met de demo? Kunnen we onze eigen missies van te voren aangeven.. Ivm validation.
+
