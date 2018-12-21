@@ -1,0 +1,95 @@
+grammar dsl.finalproject.Fp with org.eclipse.xtext.common.Terminals
+
+generate fp "http://www.finalproject.dsl/Fp"
+
+Task: 'Task:' mission+=Mission+;
+
+Mission: DriveMission | DoNothingMission |FindLakesMission |BrickMission;
+
+DoNothingMission: 'DoNothing:' time = INT
+	('OffButton:' offB += Buttons*)?
+;
+BrickMission: 'speed:'speed = SpeedOptions
+	'stopconditions:' stopcons += StopOptions*
+	('avoid:' avoid += Obstacles*)?
+	('keeptrack:' keeptrack += TrackingOptions*)?
+;
+
+DriveMission: 'drive:' dir = DirectionOptions
+	'speed:'speed = SpeedOptions
+	'stopconditions:' stopcons += StopOptions*
+	('avoid:' avoid += Obstacles*)?
+	('keeptrack:' keeptrack += TrackingOptions*)?
+;
+
+FindLakesMission: 'findColors:' findcolor += Colors*
+	'speed:'speed = SpeedOptions
+	'stopconditions:' stopcons += StopOptions*
+	('avoid:' avoid += Obstacles*)?
+	('keeptrack:' keeptrack += TrackingOptions*)?
+;
+
+enum TrackingOptions:
+	LAKES = 'lakes'|
+	TIME = 'time' |
+	BRICK = 'brick'
+;
+
+FollowLineMission: 'FollowColor:' followColor = Color
+	'speed:'speed = SpeedOptions
+	'stopconditions:' stopcons += StopOptions*
+;
+
+Colors: colors = Color
+;
+Buttons: buttons = Button
+;
+StopOptions:  Obstacles| TimeObject|ButtonPress;
+
+TimeObject: 'time' time= INT;
+
+ButtonPress: 'buttonpress' buttonloc = Button ;
+
+Obstacles:
+	 UseObstacle |ColorWithName
+;
+
+ColorWithName: 'color' color = Color;
+
+UseObstacle: OE= ObstaclesEnum;
+
+enum ObstaclesEnum:
+	BUMPER = 'bumper'|
+	OBJECT = 'object'
+	;
+
+enum Color:
+	YELLOW = 'yellow' |
+	BLUE = 'blue'|
+	RED = 'red'|
+	BLACK = 'black'|
+	WHITE = 'white'
+;
+
+enum SpeedOptions:
+	SLOW = 'slow'|
+	MEDIUM = 'medium'|
+	FAST = 'fast'
+;
+
+enum DirectionOptions:
+	LEFT = 'left'|
+	RIGHT = 'right'|
+	FORWARD = 'forward'|
+	BACKWARD = 'backward'|
+	RANDOM = 'random'
+;
+
+enum Button:
+	LEFT = 'left'|
+	TOP = 'top'|
+	MID = 'mid'|
+	RIGHT = 'right'|
+	DOWN = 'down'|
+	ANY = 'any'
+;
