@@ -17,6 +17,7 @@ import dsl.finalproject.fp.TimeObject
 import dsl.finalproject.fp.TrackingOptions
 import dsl.finalproject.fp.UseObstacle
 import dsl.finalproject.fp.Mission
+import dsl.finalproject.fp.Boole
 
 class PythonGenerator {
 	def static toPy(Task root){
@@ -117,11 +118,14 @@ class PythonGenerator {
 		my_display.clear()«"\n"»
 		btn = ev3.Button()«"\n"»
 		«"\n"»
-		server_mac = '00:17:E9:B4:C7:63'«"\n"»
+		global colorsToFind«"\n"»
+		colorsToFind= []«"\n"»
+		«"\n"»
+		server_mac = '00:17:E9:B2:1E:41'«"\n"»
 		sock, sock_in, sock_out = connect(server_mac)«"\n"»
 		blueMod = threading.Thread(target=listen, args=(sock_in,))«"\n"»
 		blueMod.start()«"\n"»
-		«FOR mission : root.mission SEPARATOR "\n ending=False \n"»
+		«FOR mission : root.mission SEPARATOR "\n"+"ending=False \n"»
 			«missionMain(mission)»
 		«ENDFOR»
 		
@@ -138,12 +142,13 @@ class PythonGenerator {
 	
 	def static dispatch missionMain(DoNothingMission Mission)'''
 		startTime= time()
+		standardSpeed = 0
 		«IF Mission.offB === null»
-		stopList = [lambda :time()-startTime<«Mission.time»]
+		stopList = [lambda :time()-startTime>«Mission.time»]
 		«ELSE»
-		stopList = [lambda :time()-startTime<«Mission.time»], «FOR button : Mission.offB SEPARATOR " , " AFTER "]"»«toText(button.buttons)»
-		«ENDFOR»
+		stopList = [lambda :time()-startTime>«Mission.time», «FOR button : Mission.offB SEPARATOR " , "»«toText(button.buttons)»«ENDFOR»]
 		«ENDIF»
+		«"\n"»
 		avoidList = []
 		senMod = threading.Thread(target=sensorModerator, args=(stopList, avoidList,))«"\n"»
 		senMod.start()«"\n"»
@@ -153,10 +158,11 @@ class PythonGenerator {
 	
 	def static dispatch missionMain(DriveMission Mission)'''
 		startTime= time()
+		standardSpeed= «toText(Mission.speed)»
 		exploreMotor= lambda curTime:«toText(Mission.dir)»
-		stopList = [«FOR stpc : Mission.stopcons SEPARATOR " , " AFTER "]"»«stopCon2Text(stpc)»«ENDFOR»
+		stopList = [«FOR stpc : Mission.stopcons SEPARATOR " , "»«stopCon2Text(stpc)»«ENDFOR»]
 		«IF Mission.avoid !== null»
-		avoidList = [«FOR avoidC : Mission.avoid SEPARATOR " , " AFTER "]"»«avoidCon2Text(avoidC)»«ENDFOR»
+		avoidList = [«FOR avoidC : Mission.avoid SEPARATOR " , "»«avoidCon2Text(avoidC)»«ENDFOR»]
 		«ELSE»
 		avoidList=[]
 		«ENDIF»
@@ -168,6 +174,30 @@ class PythonGenerator {
 		statMod.start()«"\n"»
 		motMod.start()«"\n"»
 		senMod.join()«"\n"»
+		statMod.join()«"\n"»
+		motMod.join()«"\n"»
+	'''
+	
+	def static dispatch missionMain(FindLakesMission Mission)'''
+		startTime= time()
+		removal= «toText(Mission.findCO)»
+		standardSpeed= «toText(Mission.speed)»
+		exploreMotor= lambda curTime:randomMotor(curTime)
+		stopList = [«FOR stpc : Mission.stopcons SEPARATOR " , "»«stopCon2Text(stpc)»«ENDFOR»]
+		«IF Mission.avoid !== null»
+		avoidList = [«FOR avoidC : Mission.avoid SEPARATOR " , "»«avoidCon2Text(avoidC)»«ENDFOR»]
+		«ELSE»
+		avoidList=[]
+		«ENDIF»
+		statMod = threading.Thread(target=stateModerator, args=())«"\n"»
+		motMod = threading.Thread(target=motorModerator, args=())«"\n"»
+		senMod = threading.Thread(target=sensorModerator, args=(stopList, avoidList,))«"\n"»
+		senMod.start()«"\n"»
+		sleep(1)«"\n"»
+		statMod.start()«"\n"»
+		motMod.start()«"\n"»
+		senMod.join()«"\n"»
+		findColorsOnce=[]«"\n"»
 		statMod.join()«"\n"»
 		motMod.join()«"\n"»
 	'''
@@ -214,7 +244,7 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»print("sonar no longer hit. That makes more sense")«"\n"»
 		«"\t"»«"\t"»elif data==7:«"\n"»
 		«"\t"»«"\t"»«"\t"»print("Other one is ending, I will end now too")«"\n"»
-		«"\t"»«"\t"»sleep(1)«"\n"»
+		«"\t"»«"\t"»sleep(0.1)«"\n"»
 		«"\t"»«"\t"»if trueEnd:«"\n"»
 		«"\t"»«"\t"»«"\t"»break«"\n"»
 		«"\n"»
@@ -325,7 +355,6 @@ class PythonGenerator {
 	«"\t"»global forwardCLUnsafe«"\n"»
 	«"\t"»global forwardCRUnsafe«"\n"»
 	«"\t"»global forwardCMUnsafe«"\n"»
-	«"\t"»global leftBumperUnsafe«"\n"»
 	«"\t"»global needToHandleLeftBumper«"\n"»
 	«"\t"»global needToHandleRightBumper«"\n"»
 	«"\t"»if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):«"\n"»
@@ -349,9 +378,6 @@ class PythonGenerator {
 	«"\t"»global forwardCLUnsafe«"\n"»
 	«"\t"»global forwardCRUnsafe«"\n"»
 	«"\t"»global forwardCMUnsafe«"\n"»
-	«"\t"»global leftBumperUnsafe«"\n"»
-	«"\t"»global rightBumperUnsafe«"\n"»
-	«"\t"»global forwardSonarUnsafe«"\n"»
 	«"\t"»if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):«"\n"»
 	«"\t"»«"\t"»return 'DesperateTurn'«"\n"»
 	«"\t"»elif backUnsafe:«"\n"»
@@ -408,7 +434,7 @@ class PythonGenerator {
         global forwardCRUnsafe
         global forwardCMUnsafe
         global exploreMotor
-        exploreMotor(curTime)
+        curTime=exploreMotor(curTime)
         return curTime, 'Exploring', None
         
     def bdMot(curTime, rotationChoice):
@@ -496,10 +522,10 @@ class PythonGenerator {
         
     def lbMot(curTime, rotationChoice):
             global motSpeed
-            global leftBumperUnsafe«"\n"»
-            global rightBumperUnsafe«"\n"»
-            global forwardSonarUnsafe«"\n"»
-            if leftBumperUnsafe:
+            global needToHandleForSonar
+            global needToHandleLeftBumper
+            global needToHandleRightBumper
+            if needToHandleLeftBumper:
                 motSpeed[0]=-standardSpeed
                 motSpeed[1]=-standardSpeed
                 curTime=time()
@@ -513,10 +539,10 @@ class PythonGenerator {
             
     def fdMot(curTime, rotationChoice):
         global motSpeed
-        global leftBumperUnsafe«"\n"»
-        global rightBumperUnsafe«"\n"»
-        global forwardSonarUnsafe«"\n"»
-        if forwardSonarUnsafe:
+        global needToHandleForSonar
+        global needToHandleLeftBumper
+        global needToHandleRightBumper
+        if needToHandleForSonar:
             motSpeed[0]=-standardSpeed
             motSpeed[1]=-standardSpeed
             curTime=time()
@@ -536,10 +562,10 @@ class PythonGenerator {
             
     def rbMot(curTime, rotationChoice):
         global motSpeed
-        global leftBumperUnsafe«"\n"»
-        global rightBumperUnsafe«"\n"»
-        global forwardSonarUnsafe«"\n"»
-        if rightBumperUnsafe:
+        global needToHandleForSonar
+        global needToHandleLeftBumper
+        global needToHandleRightBumper
+        if needToHandleRightBumper:
             motSpeed[0]=-standardSpeed
             motSpeed[1]=-standardSpeed
             curTime=time()
@@ -746,7 +772,7 @@ class PythonGenerator {
 		
 	def static dispatch stopCon2Text(Obstacles obst)'''«obstacles2Text(obst)»'''
 	
-	def static dispatch stopCon2Text(TimeObject timeOb) '''(int(time()) - startTime)> «timeOb.time»'''
+	def static dispatch stopCon2Text(TimeObject timeOb) '''lambda : time() - startTime> «timeOb.time»'''
 	
 	def static dispatch obstacles2Text(UseObstacle obst)'''«toStopText(obst.OE)»'''
 	
@@ -791,7 +817,6 @@ class PythonGenerator {
 	}
 		def static CharSequence toText(SpeedOptions speed){
 		switch(speed){
-			case SpeedOptions:: NOT_MOVING: return '''0'''
 			case SpeedOptions:: SLOW: return '''10'''
 			case SpeedOptions:: MEDIUM: return '''15'''
 			case SpeedOptions:: FAST: return '''20'''
@@ -813,48 +838,65 @@ class PythonGenerator {
 			case Button:: MID: return '''lambda : btn.center'''
 			case Button:: RIGHT: return '''lambda : btn.right'''
 			case Button:: DOWN: return '''lambda : btn.down'''
-			case Button:: ANY: return '''lambda : btn.any'''
+			case Button:: ANY: return '''lambda : btn.any()'''
+		}
+	}
+	
+			def static CharSequence toText(Boole bool){
+		switch(bool){
+			case Boolean:: TRUE: return '''True'''
+			case Boolean:: FALSE: return '''False'''
 		}
 	}
 	
 		def static motorOptions()'''
 			def leftMotor(curTime):
 				global motSpeed
+				global standardSpeed
 				motSpeed[0]=standardSpeed
 				motSpeed[1]=-standardSpeed
+				return curTime
 
 				
 			def rightMotor(curTime):
 				global motSpeed
+				global standardSpeed
 				motSpeed[0]=-standardSpeed
 				motSpeed[1]=standardSpeed
+				return curTime
 				
 			def forwardMotor(curTime):
 				global motSpeed
+				global standardSpeed
 				motSpeed[0]=standardSpeed
 				motSpeed[1]=standardSpeed
+				return curTime
 				
 			def backwardMotor(curTime):
 				global motSpeed
-				motSpeed[0]=standardSpeed
-				motSpeed[1]=standardSpeed
+				global standardSpeed
+				motSpeed[0]=-standardSpeed
+				motSpeed[1]=-standardSpeed
+				return curTime
 				
 			def randomMotor(curTime):
+				global standardSpeed
 				global motSpeed
 				if time()-curTime<2:«"\n"»
 				«"\t"»motSpeed[0]=random.randint(standardSpeed-5,standardSpeed+5)«"\n"»
 				«"\t"»motSpeed[1]=random.randint(standardSpeed-5,standardSpeed+5)«"\n"»
 				elif time()-curTime>5:«"\n"»
 				«"\t"»curTime=time()«"\n"»
+				return curTime
 		'''
 
-		def static leftMotor()'''leftMotor()'''
+		def static leftMotor()'''leftMotor(curTime)'''
 		
-		def static rightMotor()'''rightMotor()'''
+		def static rightMotor()'''rightMotor(curTime)'''
 
-		def static forwardMotor()'''forwardMotor()'''
+		def static forwardMotor()'''forwardMotor(curTime)'''
 
-		def static backwardMotor()'''backwardMotor()'''
+		def static backwardMotor()'''backwardMotor(curTime)'''
 		
 		def static randomMotor()'''randomMotor(curTime)'''
 }

@@ -24,9 +24,16 @@ DriveMission: 'drive:' dir = DirectionOptions
 
 FindLakesMission: 'findColors:' findcolor += Colors*
 	'speed:'speed = SpeedOptions
+	'findColorsOnce:' findCO = Boole
+	'takeSamples:' takeSamples = Boole
 	'stopconditions:' stopcons += StopOptions*
 	('avoid:' avoid += Obstacles*)?
 	('keeptrack:' keeptrack += TrackingOptions*)?
+;
+
+enum Boole:
+	TRUE = 'true' |
+	FALSE = 'false'
 ;
 
 enum TrackingOptions:
@@ -72,7 +79,6 @@ enum Color:
 ;
 
 enum SpeedOptions:
-	NOT_MOVING = 'not_moving'|
 	SLOW = 'slow'|
 	MEDIUM = 'medium'|
 	FAST = 'fast'
