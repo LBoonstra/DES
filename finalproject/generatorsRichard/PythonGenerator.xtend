@@ -80,6 +80,9 @@ class PythonGenerator {
 		global standardSpeed«"\n"»
 		global startTime
 		global btn
+		global leftColorF«"\n"»
+		global midColorF«"\n"»
+		global rightColorF«"\n"»
 		«"\n"»
 		print("Start!")«"\n"»
 		backUnsafe=False«"\n"»
@@ -121,7 +124,7 @@ class PythonGenerator {
 		global colorsToFind«"\n"»
 		colorsToFind= []«"\n"»
 		«"\n"»
-		server_mac = '00:17:E9:B2:1E:41'«"\n"»
+		server_mac = '00:17:E9:B2:F2:93'«"\n"»
 		sock, sock_in, sock_out = connect(server_mac)«"\n"»
 		blueMod = threading.Thread(target=listen, args=(sock_in,))«"\n"»
 		blueMod.start()«"\n"»
@@ -143,14 +146,17 @@ class PythonGenerator {
 	def static dispatch missionMain(DoNothingMission Mission)'''
 		startTime= time()
 		standardSpeed = 0
+		colorsToFind=[]«"\n"»
 		«IF Mission.offB === null»
 		stopList = [lambda :time()-startTime>«Mission.time»]
 		«ELSE»
 		stopList = [lambda :time()-startTime>«Mission.time», «FOR button : Mission.offB SEPARATOR " , "»«toText(button.buttons)»«ENDFOR»]
 		«ENDIF»
 		«"\n"»
+		removal=False
+		takeSample=False
 		avoidList = []
-		senMod = threading.Thread(target=sensorModerator, args=(stopList, avoidList,))«"\n"»
+		senMod = threading.Thread(target=sensorModerator, args=(stopList, avoidList,colorsToFind,removal,takeSample,))«"\n"»
 		senMod.start()«"\n"»
 		sleep(1)«"\n"»
 		senMod.join()«"\n"»
@@ -158,6 +164,7 @@ class PythonGenerator {
 	
 	def static dispatch missionMain(DriveMission Mission)'''
 		startTime= time()
+		colorsToFind=[]«"\n"»
 		standardSpeed= «toText(Mission.speed)»
 		exploreMotor= lambda curTime:«toText(Mission.dir)»
 		stopList = [«FOR stpc : Mission.stopcons SEPARATOR " , "»«stopCon2Text(stpc)»«ENDFOR»]
@@ -166,9 +173,11 @@ class PythonGenerator {
 		«ELSE»
 		avoidList=[]
 		«ENDIF»
+		removal=False
+		takeSample=False
 		statMod = threading.Thread(target=stateModerator, args=())«"\n"»
 		motMod = threading.Thread(target=motorModerator, args=())«"\n"»
-		senMod = threading.Thread(target=sensorModerator, args=(stopList, avoidList,))«"\n"»
+		senMod = threading.Thread(target=sensorModerator, args=(stopList, avoidList,colorsToFind,removal,takeSample,))«"\n"»
 		senMod.start()«"\n"»
 		sleep(1)«"\n"»
 		statMod.start()«"\n"»
@@ -180,7 +189,9 @@ class PythonGenerator {
 	
 	def static dispatch missionMain(FindLakesMission Mission)'''
 		startTime= time()
+		colorsToFind= [«FOR col : Mission.findcolor SEPARATOR " , "»«toText(col.colors)»«ENDFOR»]
 		removal= «toText(Mission.findCO)»
+		takeSample=«toText(Mission.takeSamples)»
 		standardSpeed= «toText(Mission.speed)»
 		exploreMotor= lambda curTime:randomMotor(curTime)
 		stopList = [«FOR stpc : Mission.stopcons SEPARATOR " , "»«stopCon2Text(stpc)»«ENDFOR»]
@@ -191,13 +202,13 @@ class PythonGenerator {
 		«ENDIF»
 		statMod = threading.Thread(target=stateModerator, args=())«"\n"»
 		motMod = threading.Thread(target=motorModerator, args=())«"\n"»
-		senMod = threading.Thread(target=sensorModerator, args=(stopList, avoidList,))«"\n"»
+		senMod = threading.Thread(target=sensorModerator, args=(stopList, avoidList,colorsToFind,removal,takeSample,))«"\n"»
 		senMod.start()«"\n"»
 		sleep(1)«"\n"»
 		statMod.start()«"\n"»
 		motMod.start()«"\n"»
 		senMod.join()«"\n"»
-		findColorsOnce=[]«"\n"»
+		colorsToFind=[]«"\n"»
 		statMod.join()«"\n"»
 		motMod.join()«"\n"»
 	'''
@@ -275,7 +286,7 @@ class PythonGenerator {
 		«"\t"»«"\t"»forwardCRUnsafe=True«"\n"»
 		«"\t"»else:«"\n"»
 		«"\t"»«"\t"»forwardCRUnsafe=False«"\n"»
-		«"\t"»if distance>4:«"\n"»
+		«"\t"»if distance>4.8:«"\n"»
 		«"\t"»«"\t"»backUnsafe=True«"\n"»
 		«"\t"»else:«"\n"»
 		«"\t"»«"\t"»backUnsafe=False«"\n"»
@@ -596,6 +607,31 @@ class PythonGenerator {
         motSpeed =[0,0]
         return time(), 'Exploring', None
     
+    def MeasurementTaking(curTime, rotationChoice):
+    	global leftColorF«"\n"»
+    	global midColorF«"\n"»
+    	global rightColorF«"\n"»
+    	global motSpeed
+    	if midColorF and not leftColorF and rightColorF:
+    		#MEASUREMENT BEHAVIOUR
+    		print("hi")
+    	elif midColorF and not leftColorF and not rightColorF:
+    		print("MOVE TO THE LEFT!")
+    	elif midColorF and leftColorF and not rightColorF:
+    		print("SLIDE TO THE RIGHT!")
+    	elif midColorF and leftColorF and rightColorF:
+    		print("MOVE BACK! (AND PANIC, ARE YOU NOW HAPPY?)")
+    	elif not midColorF and leftColorF and rightColorF:
+    		print("MOVE BACK!")
+    	elif not midColorF and leftColorF and not rightColorF:
+    		print("Move right!")
+    	elif not midColorF and not leftColorF and rightColorf:
+    		print("Move left!")
+    	elif not midColorF and not leftColorF and not rightColorF:
+    		print("Explore again instead")
+    	
+    		
+    
     def stateModerator():
     «"\t"»global ending«"\n"»
     «"\t"»global motSpeed«"\n"»
@@ -625,6 +661,8 @@ class PythonGenerator {
     «"\t"»«"\t"»«"\t"»curTime, curState, rotationChoice=frMot(curTime, rotationChoice)«"\n"»
     «"\t"»«"\t"»elif nextState== "DesperateTurn":«"\n"»
     «"\t"»«"\t"»«"\t"»curTime, curState, rotationChoice=despTurn(curTime, rotationChoice)«"\n"»
+    «"\t"»«"\t"»elif nextState== "MeasurementState":«"\n"»
+    «"\t"»«"\t"»«"\t"»curTime, curState, rotationChoice=MeasurementTaking(curTime, rotationChoice)«"\n"»
     «"\t"»«"\t"»if ending:«"\n"»
     «"\t"»«"\t"»«"\t"»break«"\n"»
     «"\t"»«"\t"»sleep(0.1)«"\n"»
@@ -672,10 +710,16 @@ class PythonGenerator {
 			else:
 				needToHandleRightBumper=False
 		
-		def sensorModerator(stopList, avoidList):«"\n"»
+		def sensorModerator(stopList, avoidList, colorsToFind, removal, takeSample):«"\n"»
 		«"\t"»global ending«"\n"»
 		«"\t"»global btn«"\n"»
+		«"\t"»global leftColorF«"\n"»
+		«"\t"»global midColorF«"\n"»
+		«"\t"»global rightColorF«"\n"»
 		«"\t"»curTime=time()«"\n"»
+		«"\t"»shouldFindColors= False
+		«"\t"»if colorsToFind!=[]:
+		«"\t"»«"\t"»shouldFindColors=True
 		«"\t"»while True:
 		«"\t"»«"\t"»doNotFallOff()
 		«"\t"»«"\t"»new_colorLeft = csLeft.color
@@ -689,6 +733,35 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»break
 		«"\t"»«"\t"»for avoidEle in avoidList:
 		«"\t"»«"\t"»«"\t"»avoidEle()
+		«"\t"»«"\t"»if shouldFindColors:
+		«"\t"»«"\t"»«"\t"»if colorsToFind==[]:
+		«"\t"»«"\t"»«"\t"»«"\t"»break
+		«"\t"»«"\t"»«"\t"»if takeSample:
+		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorLeft in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»leftColorF=True
+		«"\t"»«"\t"»«"\t"»«"\t"»else:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»leftColorF=False
+		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorMid in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»midColorF=True
+		«"\t"»«"\t"»«"\t"»«"\t"»else:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»midColorF=False
+		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorRight in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»rightColorF=True
+		«"\t"»«"\t"»«"\t"»«"\t"»else:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»rightColorF=False
+		«"\t"»«"\t"»«"\t"»else:
+		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorLeft in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorLeft)
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(new_colorLeft)
+		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorMid in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorMid)
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(new_colorMid)
+		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorRight in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorRight)
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(new_colorRight)
 		«"\t"»ending=True«"\n"»
 		'''
 /* 
