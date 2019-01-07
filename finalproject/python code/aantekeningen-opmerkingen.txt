@@ -21,8 +21,21 @@ Blauw: Blauw, groen, ..soms nog zwart, afhankelijk v sensor positie.
 Bugs/ verbeteringen:
 -kleuren.
 -in avoid schokkerig achteruit rijden.
+-Dingen die worden doorgegeven door de slave.  => bumper en forward sensor.. maar als alleen avoid bumpers nodig is dan wordt er nog steeds verstuurd wat de forward sensor ziet.. Hierdoor is het lastig om de sleeps goed af te stemmen...
+
 
 Vraag voor 19/12:
 -Is het betere om in de validation een error te geven, of kan dit beter predefined zijn, dat de standaard setting is dat de meren in avoid zitten?
 -Hoe gaat het met de demo? Kunnen we onze eigen missies van te voren aangeven.. Ivm validation.
+
+Datum 07/01:
+TODO:
+	-Keep track in finding lakes is optioneel. Zoals het nu is kan de user de findlakesonce op false zetten en ook geen keep track specificeren, dus eigenlijk niet wat wenselijk is met de findlakes mission. In de validation dient hier een warning voor gegeven te worden met uitleg wat de user misschien beter kan doen.
+	-Measurement beter met middelste en rechter color sensor. => Tijd weghalen 
+	
+Measurement hack:
+	-Als een lake met links wordt gedetecteerd draai dan wat door naar links aangezien de measurementarm aan de rechterkant van de middelste kleur sensor zit
+    Heeft wat tests nodig, maar waarschijnlijk is een measurement sowieso succesvol als alleen de middelste colorsensor nog de kleur ziet en de andere sensoren niet. Kan nooit dat de middelste niets ziet en rechts en links wel kleuren.
+
+-Volgende keer: Kijken naar diepte als de robot achter uit rijdt. Bij het achteruit rijden geeft hij dit keer soms waardes van ~5.5
 
