@@ -83,7 +83,9 @@ class PythonGenerator {
 		global leftColorF«"\n"»
 		global midColorF«"\n"»
 		global rightColorF«"\n"»
+		global measurementDone
 		«"\n"»
+		measurementDone=False
 		print("Start!")«"\n"»
 		backUnsafe=False«"\n"»
 		forwardCLUnsafe=False«"\n"»
@@ -124,7 +126,7 @@ class PythonGenerator {
 		global colorsToFind«"\n"»
 		colorsToFind= []«"\n"»
 		«"\n"»
-		server_mac = '00:17:E9:B2:F2:93'«"\n"»
+		server_mac = '00:17:E9:B4:C7:63'«"\n"»
 		sock, sock_in, sock_out = connect(server_mac)«"\n"»
 		blueMod = threading.Thread(target=listen, args=(sock_in,))«"\n"»
 		blueMod.start()«"\n"»
@@ -343,6 +345,9 @@ class PythonGenerator {
 	«"\t"»global needToHandleForSonar«"\n"»
 	«"\t"»global needToHandleLeftBumper«"\n"»
 	«"\t"»global needToHandleRightBumper«"\n"»
+	«"\t"»global leftColorF«"\n"»
+	«"\t"»global midColorF«"\n"»
+	«"\t"»global rightColorF«"\n"»
 	«"\t"»if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):«"\n"»
 	«"\t"»«"\t"»return 'DesperateTurn'«"\n"»
 	«"\t"»elif backUnsafe:«"\n"»
@@ -359,6 +364,8 @@ class PythonGenerator {
 	«"\t"»«"\t"»return 'RightBumperAvoidance'«"\n"»
 	«"\t"»elif needToHandleForSonar:«"\n"»
 	«"\t"»«"\t"»return 'ForwardDepthAvoidance'«"\n"»
+	«"\t"»elif leftColorF or midColorF or rightColorF:«"\n"»
+	«"\t"»«"\t"»return 'MeasurementState'«"\n"»
 	«"\t"»return ''«"\n"»
 	«"\n"»
 	def stateObstacle():
@@ -420,6 +427,15 @@ class PythonGenerator {
 	«"\t"»«"\t"»return 'DesperateTurn'«"\n"»
 	«"\t"»else:«"\n"»
 	«"\t"»«"\t"»return ''«"\n"»
+	
+	def stateMeasure():
+	«"\t"»global backUnsafe«"\n"»
+	«"\t"»global forwardCLUnsafe«"\n"»
+	«"\t"»global forwardCRUnsafe«"\n"»
+	«"\t"»global forwardCMUnsafe«"\n"»
+	«"\t"»if forwardCLUnsafe or forwardCRUnsafe or forwardCMUnsafe:«"\n"»
+	«"\t"»«"\t"»return 'DesperateTurn'«"\n"»
+	«"\t"»return ''«"\n"»
     '''
     
     def static state2Text()'''
@@ -436,6 +452,8 @@ class PythonGenerator {
             nextState= stateF()
         elif curState=='DesperateTurn':
             nextState= 'DesperateTurn'
+        elif curState=='MeasurementState':
+        	nextState=stateMeasure()
         return nextState if not (nextState=='') else curState
     
     def expMot(curTime, rotationChoice):
@@ -594,7 +612,7 @@ class PythonGenerator {
         global forwardCLUnsafe
         global forwardCRUnsafe
         global forwardCMUnsafe
-        if backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe):
+        if (backUnsafe and (forwardCMUnsafe or forwardCLUnsafe or forwardCRUnsafe)) or time()-curTime<0.5:
         	if rotationChoice == None:
                 rotationChoice=random.randint(1,2)
         	if rotationChoice ==1:
@@ -612,24 +630,40 @@ class PythonGenerator {
     	global midColorF«"\n"»
     	global rightColorF«"\n"»
     	global motSpeed
+    	global measurementDone
     	if midColorF and not leftColorF and rightColorF:
-    		#MEASUREMENT BEHAVIOUR
-    		print("hi")
+    		motSpeed=[0,0]
+    		measurement_arm.on_for_rotations(-10, 0.30, block=True)
+    		sleep(3)
+    		measurement_arm.on_for_rotations(10,0.30, block=True)
+    		measurementDone=True
+    		return time(), 'Exploring', None
     	elif midColorF and not leftColorF and not rightColorF:
-    		print("MOVE TO THE LEFT!")
+    		motSpeed[0]=-5
+    		motSpeed[1]=5
+    		return time(), 'MeasurementState', None
     	elif midColorF and leftColorF and not rightColorF:
-    		print("SLIDE TO THE RIGHT!")
+    		motSpeed[0]=-5
+    		motSpeed[1]=5
+    		return time(), 'MeasurementState', None
     	elif midColorF and leftColorF and rightColorF:
-    		print("MOVE BACK! (AND PANIC, ARE YOU NOW HAPPY?)")
+    		motSpeed[0]=-5
+    		motSpeed[1]=-5
+    		return time(), 'MeasurementState', None
     	elif not midColorF and leftColorF and rightColorF:
-    		print("MOVE BACK!")
+    		motSpeed[0]=-5
+    		motSpeed[1]=-5
+    		return time(), 'MeasurementState', None
     	elif not midColorF and leftColorF and not rightColorF:
-    		print("Move right!")
-    	elif not midColorF and not leftColorF and rightColorf:
-    		print("Move left!")
-    	elif not midColorF and not leftColorF and not rightColorF:
-    		print("Explore again instead")
-    	
+    		motSpeed[0]=-5
+    		motSpeed[1]=5
+    		return time(), 'MeasurementState', None
+    	elif not midColorF and not leftColorF and rightColorF:
+    		motSpeed[0]=5
+    		motSpeed[1]=-5
+    		return time(), 'MeasurementState', None
+    	motSpeed=[0,0]
+    	return time(), 'Exploring', None
     		
     
     def stateModerator():
@@ -716,6 +750,7 @@ class PythonGenerator {
 		«"\t"»global leftColorF«"\n"»
 		«"\t"»global midColorF«"\n"»
 		«"\t"»global rightColorF«"\n"»
+		«"\t"»global measurementDone«"\n"»
 		«"\t"»curTime=time()«"\n"»
 		«"\t"»shouldFindColors= False
 		«"\t"»if colorsToFind!=[]:
@@ -737,18 +772,36 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»if colorsToFind==[]:
 		«"\t"»«"\t"»«"\t"»«"\t"»break
 		«"\t"»«"\t"»«"\t"»if takeSample:
-		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorLeft in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»colorDetected=0
+		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorLeft in colorsToFind and not measurementDone:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»leftColorF=True
+		«"\t"»«"\t"»«"\t"»«"\t"»elif new_colorLeft in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorDetected=new_colorLeft
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»leftColorF=False
 		«"\t"»«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»leftColorF=False
-		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorMid in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorMid in colorsToFind and not measurementDone:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»midColorF=True
+		«"\t"»«"\t"»«"\t"»«"\t"»elif new_colorMid in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorDetected=new_colorMid
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»midColorF=False
 		«"\t"»«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»midColorF=False
-		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorRight in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorRight in colorsToFind and not measurementDone:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»rightColorF=True
+		«"\t"»«"\t"»«"\t"»«"\t"»elif new_colorRight in colorsToFind:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorDetected=new_colorRight
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»midColorF=False
 		«"\t"»«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»rightColorF=False
+		«"\t"»«"\t"»«"\t"»«"\t"»if colorDetected!=0:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda : colorAvoid(colorDetected))
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(colorDetected)
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»measurementDone=False
+		«"\t"»«"\t"»«"\t"»«"\t"»elif not removal and measurementDone:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»del avoidList[-1]
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»measurementDone=False
 		«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorLeft in colorsToFind:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorLeft)
