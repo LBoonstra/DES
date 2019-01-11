@@ -126,7 +126,7 @@ class PythonGenerator {
 		global colorsToFind«"\n"»
 		colorsToFind= []«"\n"»
 		«"\n"»
-		server_mac = '00:17:E9:B4:C7:63'«"\n"»
+		server_mac = '00:17:E9:B2:F2:93'«"\n"»
 		sock, sock_in, sock_out = connect(server_mac)«"\n"»
 		blueMod = threading.Thread(target=listen, args=(sock_in,))«"\n"»
 		blueMod.start()«"\n"»
@@ -753,6 +753,7 @@ class PythonGenerator {
 		«"\t"»global measurementDone«"\n"»
 		«"\t"»curTime=time()«"\n"»
 		«"\t"»shouldFindColors= False
+		«"\t"»needToAvoidColor=-1
 		«"\t"»if colorsToFind!=[]:
 		«"\t"»«"\t"»shouldFindColors=True
 		«"\t"»while True:
@@ -794,14 +795,22 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»midColorF=False
 		«"\t"»«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»rightColorF=False
-		«"\t"»«"\t"»«"\t"»«"\t"»if colorDetected!=0:
-		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda : colorAvoid(colorDetected))
+		«"\t"»«"\t"»«"\t"»«"\t"»if colorDetected!=0 and needToAvoidColor==-1:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=colorDetected : colorAvoid(copy))
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(colorDetected)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»measurementDone=False
-		«"\t"»«"\t"»«"\t"»«"\t"»elif not removal and measurementDone:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»else:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=colorDetected
+		«"\t"»«"\t"»«"\t"»«"\t"»elif colorDetected!=needToAvoidColor and not removal and measurementDone:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»del avoidList[-1]
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»measurementDone=False
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=-1
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»forwardCMUnsafe=True
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»backUnsafe=True
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»sleep(5)
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»forwardCMUnsafe=False
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»backUnsafe=False
 		«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorLeft in colorsToFind:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorLeft)
@@ -970,8 +979,8 @@ class PythonGenerator {
 	
 			def static CharSequence toText(Boole bool){
 		switch(bool){
-			case Boolean:: TRUE: return '''True'''
-			case Boolean:: FALSE: return '''False'''
+			case Boole:: TRUE: return '''True'''
+			case Boole:: FALSE: return '''False'''
 		}
 	}
 	
