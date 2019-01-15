@@ -1,0 +1,8 @@
+validation:
+better error message when the list is not completed.. FOr example in the case of stop conditions.
+Error message when a color is in avoid and in findcolors
+Error message when tracking options brick but no bumper avoidence is given.
+Warning when tracking options brick but stopcondition is a bumper
+Error message when findcolors is black or white
+Error message when avoid is black.
+Warning when stopcondition is color black
