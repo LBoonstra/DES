@@ -203,6 +203,11 @@ class PythonGenerator {
 		«ELSE»
 		avoidList=[]
 		«ENDIF»
+		«IF Mission.avoid !== null»
+		trackList = [«FOR trackO : Mission.keeptrack SEPARATOR " , "»«trackCon2Text(trackO)»«ENDFOR»]
+		«ELSE»
+		trackList=[]
+		«ENDIF»
 		statMod = threading.Thread(target=stateModerator, args=())«"\n"»
 		motMod = threading.Thread(target=motorModerator, args=())«"\n"»
 		senMod = threading.Thread(target=sensorModerator, args=(stopList, avoidList,colorsToFind,removal,takeSample,))«"\n"»
@@ -216,7 +221,7 @@ class PythonGenerator {
 		motMod.join()«"\n"»
 		s.speak("Mission complete.")«"\n"»
 	'''
-	
+		
 	def static blueToothCode()'''
 		def connect(server_mac):«"\n"»
 		«"\t"»port = 3«"\n"»
@@ -921,6 +926,8 @@ class PythonGenerator {
 	
 	def static dispatch stopCon2Text(ButtonPress button)'''«toText(button.buttonloc)» '''	
 	
+	def static trackCon2Text(TrackingOptions option) '''«toText(option)»'''
+	
 	def static CharSequence toStopText(ObstaclesEnum obst){
 		switch(obst){
 			case ObstaclesEnum:: BUMPER: return '''lambda : leftBumperUnsafe or rightBumperUnsafe'''
@@ -937,9 +944,9 @@ class PythonGenerator {
 	
 	def static CharSequence toText(TrackingOptions option){
 		switch(option){
-			case TrackingOptions::LAKES: return''''''
-			case TrackingOptions::TIME: return ''''''
-			case TrackingOptions::BRICK: return ''''''
+			case TrackingOptions::LAKES: return'''1'''
+			case TrackingOptions::TIME: return '''2'''
+			case TrackingOptions::BRICK: return '''3'''
 		}
 	}
 	
