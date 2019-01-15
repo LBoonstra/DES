@@ -22,6 +22,7 @@ Bugs/ verbeteringen:
 -kleuren.
 -in avoid schokkerig achteruit rijden.
 -Dingen die worden doorgegeven door de slave.  => bumper en forward sensor.. maar als alleen avoid bumpers nodig is dan wordt er nog steeds verstuurd wat de forward sensor ziet.. Hierdoor is het lastig om de sleeps goed af te stemmen...
+-oplossing voor over een lake heenrijden nadat de robot voor uit moest door unsafebackward.
 
 
 Vraag voor 19/12:
@@ -39,3 +40,5 @@ Measurement hack:
 
 -Volgende keer: Kijken naar diepte als de robot achter uit rijdt. Bij het achteruit rijden geeft hij dit keer soms waardes van ~5.5
 
+
+-
