@@ -4,32 +4,26 @@ generate fp "http://www.finalproject.dsl/Fp"
 
 Task: 'Task:' mission+=Mission+;
 
-Mission: DriveMission | DoNothingMission |FindLakesMission |BrickMission;
+Mission: DriveMission | DoNothingMission |FindLakesMission;
 
 DoNothingMission: 'DoNothing:' time = INT
-	('OffButton:' offB += Buttons*)?
-;
-
-BrickMission: 'speed:'speed = SpeedOptions
-	'stopconditions:' stopcons += StopOptions*
-	('avoid:' avoid += Obstacles*)?
-	('keeptrack:' keeptrack += TrackingOptions*)?
+	('OffButton:' offB += Buttons+)?
 ;
 
 DriveMission: 'drive:' dir = DirectionOptions
 	'speed:'speed = SpeedOptions
-	'stopconditions:' stopcons += StopOptions*
-	('avoid:' avoid += Obstacles*)?
-	('keeptrack:' keeptrack += TrackingOptions*)?
+	'stopconditions:' stopcons += StopOptions+
+	('avoid:' avoid += Obstacles+)?
+	('keeptrack:' keeptrack += TrackingOptions+)?
 ;
 
-FindLakesMission: 'findColors:' findcolor += Colors*
+FindLakesMission: 'findColors:' findcolor += Colors+
 	'speed:'speed = SpeedOptions
 	'findColorsOnce:' findCO = Boole
 	'takeSamples:' takeSamples = Boole
-	'stopconditions:' stopcons += StopOptions*
-	('avoid:' avoid += Obstacles*)?
-	('keeptrack:' keeptrack += TrackingOptions*)?
+	'stopconditions:' stopcons += StopOptions+
+	('avoid:' avoid += Obstacles+)?
+	('keeptrack:' keeptrack += TrackingOptions+)?
 ;
 
 enum Boole:
