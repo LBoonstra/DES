@@ -129,6 +129,10 @@ class PythonGenerator {
 		colorsToFind= []«"\n"»
 		global countobjects«"\n"»
 		countobjects = 0«"\n"»
+		global numSamples #aanpassen«"\n"»
+		global numLakesFound #aanpassen«"\n"»
+		numSamples = 0 #aanpassen«"\n"»
+		numLakesFound = 0 #aanpassen«"\n"»
 		«"\n"»
 		server_mac = '00:17:E9:B4:C7:63'«"\n"»
 		sock, sock_in, sock_out = connect(server_mac)«"\n"»
@@ -256,16 +260,23 @@ class PythonGenerator {
 		s.speak("Mission complete!")«"\n"»
 		if trackList != []:
 		«"\t"»if 1 in trackList:
-		«"\t"»«"\t"»s.speak("You have instructed me to count lakes")«"\n"»
-		«"\t"»«"\t"»s.speak("However I was just driving around not keeping track of the scenery")«"\n"»
+		«"\t"»«"\t"»if numLakesFound == 1:
+		«"\t"»«"\t"»«"\t"»s.speak("I have found " + str(numLakesFound) + " lake")
+		«"\t"»«"\t"»else:
+		«"\t"»«"\t"»«"\t"»s.speak("I have found " + str(numLakesFound) + " lakes")
+		«"\t"»«"\t"»#I have detected .. find colors lakes. and take ... measurements
+		«"\t"»«"\t"»if takeSample and numSamples == 1:
+		«"\t"»«"\t"»«"\t"»s.speak("I have taken "+ str(numSamples) + " sample")
+		«"\t"»«"\t"»elif takeSample:
+		«"\t"»«"\t"»«"\t"»s.speak("I have taken "+ str(numSamples) + " samples")
 		«"\t"»if 2 in trackList:
 		«"\t"»«"\t"»tracktime=int(time()-startTime)
 		«"\t"»«"\t"»s.speak("The time that has passed is " + str(tracktime) + " seconds")«"\n"»
 		«"\t"»if 3 in trackList: # bumperChecker() should be in avoid list.
 		«"\t"»«"\t"»if countobjects == 1:
-		«"\t"»«"\t"»«"\t"»s.speak("I have bumped into " + countobjects + " object")«"\n"»
+		«"\t"»«"\t"»«"\t"»s.speak("I have bumped into " + str(countobjects) + " object")«"\n"»
 		«"\t"»«"\t"»else:
-		«"\t"»«"\t"»«"\t"»s.speak("I have bumped into " + countobjects + " objects")«"\n"»
+		«"\t"»«"\t"»«"\t"»s.speak("I have bumped into " + str(countobjects) + " objects")«"\n"»
 	'''
 	
 	def static blueToothCode()'''
@@ -691,12 +702,14 @@ class PythonGenerator {
     	global rightColorF«"\n"»
     	global motSpeed
     	global measurementDone
+    	global numSamples
     	if midColorF and not leftColorF and rightColorF:
     		motSpeed=[0,0]
     		measurement_arm.on_for_rotations(-10, 0.30, block=True)
     		sleep(3)
     		measurement_arm.on_for_rotations(10,0.30, block=True)
     		measurementDone=True
+    		numSamples+=1
     		return time(), 'Exploring', None
     	elif midColorF and not leftColorF and not rightColorF:
     		motSpeed[0]=-5
@@ -822,6 +835,7 @@ class PythonGenerator {
 		«"\t"»global measurementDone«"\n"»
 		«"\t"»global forwardCMUnsafe«"\n"»
 		«"\t"»global backUnsafe«"\n"»
+		«"\t"»global numLakesFound«"\n"»
 		«"\t"»prevTime=time()«"\n"»
 		«"\t"»shouldFindColors= False
 		«"\t"»needToAvoidColor=-1
@@ -868,6 +882,7 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»rightColorF=False
 		«"\t"»«"\t"»«"\t"»«"\t"»if colorDetected!=0 and needToAvoidColor==-1:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=colorDetected : colorAvoid(copy))
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»numLakesFound+=1 #aanpassen
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(colorDetected)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»measurementDone=False
@@ -886,6 +901,7 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorLeft in colorsToFind and needToAvoidColor==-1:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorLeft)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=new_colorLeft : colorAvoid(copy))
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»numLakesFound+=1 #aanpassen
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(new_colorLeft)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»else:
@@ -893,6 +909,7 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorMid in colorsToFind and needToAvoidColor==-1:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorMid)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=new_colorMid : colorAvoid(copy))
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»numLakesFound+=1 #aanpassen
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(new_colorMid)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»else:
@@ -900,6 +917,7 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorRight in colorsToFind and needToAvoidColor==-1:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorRight)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=new_colorRight : colorAvoid(copy))
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»numLakesFound+=1 #aanpassen
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(new_colorRight)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»else:
