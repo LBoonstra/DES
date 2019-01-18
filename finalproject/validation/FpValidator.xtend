@@ -7,8 +7,21 @@ import dsl.finalproject.fp.Task
 import dsl.finalproject.fp.Obstacles
 import dsl.finalproject.fp.ColorWithName
 import dsl.finalproject.fp.Color
+import dsl.finalproject.fp.StopOptions
 import dsl.finalproject.fp.FpPackage
 import org.eclipse.xtext.validation.Check
+import dsl.finalproject.fp.FindLakesMission
+import dsl.finalproject.fp.UseObstacle
+import dsl.finalproject.fp.TimeObject
+import dsl.finalproject.fp.ButtonPress
+import dsl.finalproject.fp.Button
+import dsl.finalproject.fp.Mission
+import dsl.finalproject.fp.DriveMission
+import java.util.List
+import java.util.Collections
+import dsl.finalproject.fp.Colors
+import dsl.finalproject.fp.TrackingOptions
+import dsl.finalproject.fp.ObstaclesEnum
 
 /**
  * This class contains custom validation rules. 
@@ -18,15 +31,312 @@ import org.eclipse.xtext.validation.Check
 class FpValidator extends AbstractFpValidator {
 	
 
-
+/* 
 	@Check
 	def avoidWithBlack(Obstacles obstacle) {
 		if (obstacle==ColorWithName) 
 		{
-			if (ColorWithName==Color.BLACK) {
-				warning('You try to avoid black on a black space.',null)
+			if (ColorWithName.color==Color.BLACK) {
+				warning('You try to avoid black on a black space.',null);
+			}
+		}
+	}*/
+	
+	@Check 
+	def testDupStop(Mission mission) {
+		var stopList=(Collections.<StopOptions>emptyList());
+		if (mission instanceof FindLakesMission) {
+			var missionconvert = mission as FindLakesMission
+			stopList=missionconvert.stopcons
+		}
+		else if (mission instanceof DriveMission) {
+			var missionconvert = mission as DriveMission
+			stopList=missionconvert.stopcons
+		}		
+		for (var i=0; i<stopList.size;i++)
+		{
+			for (var r=i+1; r<stopList.size;r++) {
+				if (stopList.get(r) instanceof Obstacles && stopList.get(i) instanceof Obstacles){
+					var obsconvertr = stopList.get(r) as Obstacles
+					var obsconverti = stopList.get(i) as Obstacles
+					if (obsconvertr instanceof ColorWithName && obsconverti instanceof ColorWithName) {
+						var colconvertr = obsconvertr as ColorWithName
+						var colconverti = obsconverti as ColorWithName
+						if (colconvertr.color.equals(colconverti.color))
+							warning("You have duplicate colors in the stopcondition", null)
+						}
+					if (obsconvertr instanceof UseObstacle && obsconverti instanceof UseObstacle){
+						var useconvertr = obsconvertr as UseObstacle
+						var useconverti = obsconverti as UseObstacle
+						if (useconvertr.OE.equals(useconverti.OE))
+							warning("You have duplicate bumper or object in the stopcondition", null)
+						}
+					}
+				if (stopList.get(r) instanceof TimeObject && stopList.get(i) instanceof TimeObject){
+					error("You have two specifications for time in the stopcondition",null)
+				}
+				if (stopList.get(r) instanceof ButtonPress && stopList.get(i) instanceof ButtonPress){
+					var buttonconvertr = stopList.get(r) as ButtonPress
+					var buttonconverti = stopList.get(i) as ButtonPress
+					if (buttonconvertr.buttonloc.equals(Button.ANY) || buttonconverti.buttonloc.equals(Button.ANY)) {
+						warning("You have a button any and another button stop condition. Any already does any button", null)
+					}
+					else if (buttonconvertr.buttonloc.equals(buttonconverti.buttonloc)){
+						warning("You have multiple times the same button as stopcondition", null)
+					}
+				}
+			}
+		}
+			
+	}
+	
+	@Check 
+	def testDupAvoid(Mission mission) {
+		var avoidList=(Collections.<Obstacles>emptyList());
+		if (mission instanceof FindLakesMission) {
+			var missionconvert = mission as FindLakesMission
+			avoidList=missionconvert.avoid
+		}
+		else if (mission instanceof DriveMission) {
+			var missionconvert = mission as DriveMission
+			avoidList=missionconvert.avoid
+		}		
+		for (var i=0; i<avoidList.size;i++)
+		{
+			for (var r=i+1; r<avoidList.size;r++) {
+				if (avoidList.get(r) instanceof ColorWithName && avoidList.get(i) instanceof ColorWithName) {
+					var colconvertr = avoidList.get(r) as ColorWithName
+					var colconverti = avoidList.get(i) as ColorWithName
+					if (colconvertr.color.equals(colconverti.color))
+						warning("You have duplicate colors in the avoid", null)
+				}
+				if (avoidList.get(r) instanceof UseObstacle && avoidList.get(i) instanceof UseObstacle){
+					var useconvertr = avoidList.get(r) as UseObstacle
+					var useconverti = avoidList.get(i) as UseObstacle
+					if (useconvertr.OE.equals(useconverti.OE))
+						warning("You have duplicate bumper or object in the avoid", null)
+				}
+			}
+		}			
+	}
+	
+		@Check 
+	def testDubStopAvoid(Mission mission) {
+		var stopList=(Collections.<StopOptions>emptyList());
+		var avoidList=(Collections.<Obstacles>emptyList());
+		if (mission instanceof FindLakesMission) {
+			var missionconvert = mission as FindLakesMission
+			stopList=missionconvert.stopcons
+			avoidList=missionconvert.avoid
+		}
+		else if (mission instanceof DriveMission) {
+			var missionconvert = mission as DriveMission
+			stopList=missionconvert.stopcons
+			avoidList=missionconvert.avoid
+		}		
+		for (var i=0; i<stopList.size;i++)
+		{
+			if (stopList.get(i) instanceof Obstacles){
+				var obsconverti = stopList.get(i) as Obstacles
+				for (var r=0; r<avoidList.size;r++) {
+					if (avoidList.get(r) instanceof ColorWithName && obsconverti instanceof ColorWithName) {
+						var colconvertr = avoidList.get(r) as ColorWithName
+						var colconverti = obsconverti as ColorWithName
+						if (colconvertr.color.equals(colconverti.color))
+							warning("You have the same color in stopcondition as in avoidcondition", null)
+					}
+					if (avoidList.get(r) instanceof UseObstacle && obsconverti instanceof UseObstacle){
+						var useconvertr = avoidList.get(r) as UseObstacle
+						var useconverti = obsconverti as UseObstacle
+						if (useconvertr.OE.equals(useconverti.OE))
+							warning("You have duplicate bumper or object, in stopcondition as in avoidcondition", null)
+					}
+				}
+			}
+		}
+			
+	}
+	
+	@Check
+	def avoidOrStopNotAtBlack(Mission mission) {
+		var stopList=(Collections.<StopOptions>emptyList());
+		var avoidList=(Collections.<Obstacles>emptyList());
+		if (mission instanceof FindLakesMission) {
+			var missionconvert = mission as FindLakesMission
+			stopList=missionconvert.stopcons
+			avoidList=missionconvert.avoid
+		}
+		else if (mission instanceof DriveMission) {
+			var missionconvert = mission as DriveMission
+			stopList=missionconvert.stopcons
+			avoidList=missionconvert.avoid
+		}
+		for (var i=0; i<avoidList.size;i++) {
+			if (avoidList.get(i) instanceof ColorWithName) {
+				var colconverti = avoidList.get(i) as ColorWithName
+				if (Color.BLACK.equals(colconverti.color))
+					warning("You are going to avoid the color black. Mars is mostly black", null);	
+			}
+		}
+
+		for (var i=0; i<stopList.size;i++) {
+			if (stopList.get(i) instanceof Obstacles){
+				var obsconverti = stopList.get(i) as Obstacles
+				if (obsconverti instanceof ColorWithName) {
+					var colconverti = obsconverti as ColorWithName
+					if (Color.BLACK.equals(colconverti.color))
+						warning("You are stopping when you find the color black. Mars is mostly black", null);
+				}	
+			}
+		}
+		
+	}
+	
+	@Check
+	def bumperTracking(Mission mission){
+		var stopList=(Collections.<StopOptions>emptyList());
+		var avoidList=(Collections.<Obstacles>emptyList());
+		var trackingList=(Collections.<TrackingOptions>emptyList());
+		if (mission instanceof FindLakesMission) {
+			var missionconvert = mission as FindLakesMission
+			stopList=missionconvert.stopcons
+			avoidList=missionconvert.avoid
+			trackingList=missionconvert.keeptrack
+		}
+		else if (mission instanceof DriveMission) {
+			var missionconvert = mission as DriveMission
+			stopList=missionconvert.stopcons
+			avoidList=missionconvert.avoid
+			trackingList=missionconvert.keeptrack
+		}
+		var bumperTrackingFound = false
+		for (var i=0; i<trackingList.size;i++){
+			if (trackingList.get(i).equals(TrackingOptions.BRICK))
+				bumperTrackingFound=true
+		}
+		if (bumperTrackingFound) {
+			var bumperInAvoid = false
+			for (var r=0; r<avoidList.size;r++) {
+				if (avoidList.get(r) instanceof UseObstacle) {
+					var useconvert=avoidList.get(r) as UseObstacle
+					if (useconvert.OE.equals(ObstaclesEnum.BUMPER))
+						bumperInAvoid=true
+				}
+			}
+			if (!bumperInAvoid) {
+				error("You cannot track the amount of bricks without avoiding them.", null)
+			}
+			var bumperInStop=false
+			for (var r=0; r<stopList.size;r++) {
+				if (stopList.get(r) instanceof Obstacles) {
+					var obsconvert=stopList.get(r) as Obstacles
+					if (obsconvert instanceof UseObstacle) {
+						if (obsconvert.OE.equals(ObstaclesEnum.BUMPER))
+							bumperInStop=true
+					}
+				}
+			}
+			if (bumperInStop)
+				warning("You will only track a single brick because you stop after",null)
+		}
+		
+	}
+	
+	@Check
+	def driveAndColorChecking(DriveMission mission) {
+		var trackingList=mission.keeptrack;
+		for (var i=0;i<trackingList.size;i++) {
+			if (trackingList.get(i).equals(TrackingOptions.LAKES))
+				error("You are searching for lakes in a drive mission. Try a find colors mission?", null)
+		}
+	}
+	
+	@Check
+	def findNoWhiteOrBlack(FindLakesMission mission) {
+		var colorsToFind=mission.findcolor
+		for (var r=0; r<colorsToFind.size;r++) {
+			if (Color.BLACK.equals(colorsToFind.get(r).colors)) {
+				warning("You are searching for the color black. Mars is mostly black", null);
+			}
+			else if (Color.WHITE.equals(colorsToFind.get(r).colors))
+				warning("You are searching for the color white, which forms the edge of Mars", null);
+		}
+		
+	}
+	
+	@Check 
+	def noDubColorFind(FindLakesMission mission) {
+		var colorsToFind=mission.findcolor
+		for (var i=0; i<colorsToFind.size;i++){
+			for (var r=i+1; r<colorsToFind.size;r++) {
+				if (colorsToFind.get(i).colors.equals(colorsToFind.get(r).colors))
+					warning("You are searching for the same color twice", null)
+			}
+		}
+			
+	}
+	
+	@Check
+	def noTrackDub(Mission mission) {
+		var trackingList=(Collections.<TrackingOptions>emptyList());
+		if (mission instanceof FindLakesMission) {
+			var missionconvert = mission as FindLakesMission
+			trackingList=missionconvert.keeptrack
+		}
+		else if (mission instanceof DriveMission) {
+			var missionconvert = mission as DriveMission
+			trackingList=missionconvert.keeptrack
+		}
+		for (var i=0; i<trackingList.size;i++){
+			for (var r=i+1; r<trackingList.size;r++) {
+				if (trackingList.get(i).equals(trackingList.get(r)))
+					warning("You are tracking the same option twice", null)
 			}
 		}
 	}
+	
+	@Check 
+	def testDubFindColorsAvoidStop(FindLakesMission mission) {
+		var stopList=mission.stopcons
+		var avoidList=mission.avoid
+		var colorsToFind=mission.findcolor
+		for (var i=0; i<stopList.size;i++) {
+			if (stopList.get(i) instanceof Obstacles){
+				var obsconverti = stopList.get(i) as Obstacles
+				if (obsconverti instanceof ColorWithName) {
+					var colconverti = obsconverti as ColorWithName
+					for (var r=0; r<colorsToFind.size;r++) {
+						if (colconverti.color.equals(colorsToFind.get(r).colors))
+							warning("You have the same color in stopcondition as a color you want to find", null)
+					}
+				}
+			}
+		}
+		for (var i=0; i<avoidList.size;i++) {
+			if (avoidList.get(i) instanceof ColorWithName) {
+				var colconverti = avoidList.get(i) as ColorWithName
+				for (var r=0; r<colorsToFind.size;r++) {
+					if (colconverti.color.equals(colorsToFind.get(r).colors))
+						warning("You have the same color in avoid as a color you want to find", null)
+				}
+			}
+		}
+	}
+	
+	/*
+	@Check
+	def testIfObstacle(Obstacles obstacle) {
+		if (obstacle==ColorWithName.)
+		{
+			warning('Test succeeded',null);
+		}
+	}
+	
+	@Check
+	def testBlackness(ColorWithName cwn) {
+		if (cwn.color==Color.BLACK) {
+				warning('You try to avoid black on a black space.',null);
+			}
+	}*/
 	
 }
