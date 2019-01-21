@@ -3,6 +3,7 @@ package dsl.finalproject.generator
 import dsl.finalproject.fp.Task
 
 class FpSlaveGenerator {
+	//Central function to generate the file with. Call this in the FpGenerator to generate slave file.
 		def static toPy(Task root){
 		'''
 		«imports()»«"\n"»
@@ -13,7 +14,10 @@ class FpSlaveGenerator {
 		«mainThread()»
 		'''
 	}
-	
+	//Code that checks if the left bumper on the robot is pressed. If yes the value 1 will be sent to the 
+	//master. 
+	//If the bumper is not pressed anymore but was pressed at previously the slave will sent a 2 over to the 
+	//master.
 		def static bumperSensorLeft()  '''
 			def leftBumperSensor(sock_out):
 				tsLeft = TouchSensor(INPUT_1)
@@ -29,7 +33,8 @@ class FpSlaveGenerator {
 					if ending:
 						break
 		'''
-		
+		//Code that checks if the right bumper on the robot is pressed. If yes the value 3 will be sent to the master. 
+	//If the bumper is not pressed anymore but was pressed at previously the slave will sent a 4 over to the master.	
 		def static bumperSensorRight()  '''
 			def rightBumperSensor(sock_out):
 				tsRight = TouchSensor(INPUT_4)
@@ -45,7 +50,11 @@ class FpSlaveGenerator {
 					if ending:
 						break
 		'''
-	
+		
+		//Code that checks if there is something in front of the robot. If yes the value 5 will be sent to 
+		//the master. 
+		//If there is no object that is close to the robot at the front end, but there was previously then 
+		//the slave will sent a 6 over to the master.
 		def static sonarSensor() '''
 			def forwSonarSensor(sock_out):
 				us = UltrasonicSensor()
@@ -63,6 +72,11 @@ class FpSlaveGenerator {
 						break
 		'''
 
+		/*
+		 * Creates the functions related to the bluetooth connection, such as connect, disconnect, listen
+		 * and send info. Listen checks if the other brick is ending and this one should end then.
+		 * SendInfo sends information determined by the other threads to the other brick.
+		 */
 		def static blueToothCode()'''
 			def connect(server_mac):«"\n"»
 			«"\t"»port = 3«"\n"»
@@ -90,6 +104,7 @@ class FpSlaveGenerator {
 			«"\t"»sock_out.flush()«"\n"»
 		'''
 	
+		//Inserts all necessary imports for the file to work
 		def static imports()'''
 		#!/usr/bin/env python3«"\n"»
 		«"\n"»
@@ -107,6 +122,11 @@ class FpSlaveGenerator {
 		from time import time«"\n"»
 	'''
 	
+	/*
+	 * Starts all other threads, including the bluetooth thread. Adjust server_mac according to the
+	 * server_mac of the master (and also adjust this in the PythonGenerator). Mainthread waits
+	 * until all other threads have ended before ending itself.
+	 */
 	def static mainThread()'''
 		global ending«"\n"»
 		ending=False«"\n"»

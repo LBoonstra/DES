@@ -19,6 +19,7 @@ import dsl.finalproject.fp.Mission
 import dsl.finalproject.fp.Boole
 
 class PythonGenerator {
+	//Central function to generate the file with. Call this in the FpGenerator to generate master file.
 	def static toPy(Task root){
 		'''
 		«imports()»«"\n"»
@@ -34,18 +35,7 @@ class PythonGenerator {
 		'''
 	}
 	
-	def static dispatch speedDef(DoNothingMission Mission)'''
-		standardSpeed =0
-	'''
-	
-	def static dispatch speedDef(DriveMission Mission)'''
-		«normSpeedDef(Mission.speed)»
-		'''
-	
-	def static normSpeedDef(SpeedOptions speed)'''
-		standardSpeed = «toText(speed)»
-	'''
-	
+	//Inserts all necessary imports for the file to work
 	def static imports()'''
 		#!/usr/bin/env python3«"\n"»
 		«"\n"»
@@ -64,6 +54,10 @@ class PythonGenerator {
 		from time import time«"\n"»
 	'''
 	
+	//Creates all globals, and puts them to standard settings. Also assigns variables to the sensors.
+	//Further goes through all missions as specified, and writes them down. Further starts bluetooth
+	//connection and ends the code once all missions have been completed.
+	//(change server_mac according to the master robot's server_mac. Do the same for the slave in FpSlaveGenerator.)
 	def static mainThread(Task root)'''
 		global backUnsafe«"\n"»
 		global forwardCLUnsafe«"\n"»
@@ -127,8 +121,14 @@ class PythonGenerator {
 		«"\n"»
 		global colorsToFind«"\n"»
 		colorsToFind= []«"\n"»
+		global countobjects«"\n"»
+		countobjects = 0«"\n"»
+		global numSamples «"\n"»
+		global numLakesFound «"\n"»
+		numSamples = 0 «"\n"»
+		numLakesFound = 0 «"\n"»
 		«"\n"»
-		server_mac = '00:17:E9:B2:F2:93'«"\n"»
+		server_mac = '00:17:E9:B4:C7:63'«"\n"»
 		sock, sock_in, sock_out = connect(server_mac)«"\n"»
 		blueMod = threading.Thread(target=listen, args=(sock_in,))«"\n"»
 		blueMod.start()«"\n"»
@@ -143,10 +143,13 @@ class PythonGenerator {
 		disconnect(sock_out)«"\n"»
 		disconnect(sock)«"\n"»
 		print("Finished")«"\n"»
+		s.speak("I have completed all missions")
+		s.speak("Bye Mars")
 		sleep(5)«"\n"»
 		
 	'''
 	
+	//The type of mission that describes doing absolutely nothing
 	def static dispatch missionMain(DoNothingMission Mission)'''
 		startTime= time()
 		standardSpeed = 0
@@ -167,9 +170,11 @@ class PythonGenerator {
 		s.speak("Mission complete!")«"\n"»
 	'''
 	
+	//The type of mission that specifies driving in a random or a specified direction, such as forward, back
 	def static dispatch missionMain(DriveMission Mission)'''
 		startTime= time()
 		colorsToFind=[]«"\n"»
+		countobjects=0«"\n"»
 		standardSpeed= «toText(Mission.speed)»
 		exploreMotor= lambda prevTime:«toText(Mission.dir)»
 		stopList = [«FOR stpc : Mission.stopcons SEPARATOR " , "»«stopCon2Text(stpc)»«ENDFOR»]
@@ -177,6 +182,11 @@ class PythonGenerator {
 		avoidList = [«FOR avoidC : Mission.avoid SEPARATOR " , "»«avoidCon2Text(avoidC)»«ENDFOR»]
 		«ELSE»
 		avoidList=[]
+		«ENDIF»
+		«IF Mission.keeptrack !== null»
+		trackList = [«FOR trackO : Mission.keeptrack SEPARATOR " , "»«trackCon2Text(trackO)»«ENDFOR»]
+		«ELSE»
+		trackList=[]
 		«ENDIF»
 		removal=False
 		takeSample=False
@@ -188,16 +198,31 @@ class PythonGenerator {
 		statMod.start()«"\n"»
 		motMod.start()«"\n"»
 		senMod.join()«"\n"»
+		tracktime=int(time()-startTime)
 		statMod.join()«"\n"»
 		motMod.join()«"\n"»
 		needToHandleForSonar=False«"\n"»
 		needToHandleLeftBumper=False«"\n"»
 		needToHandleRightBumper=False«"\n"»
 		s.speak("Mission complete!")«"\n"»
+		if trackList != []:
+		«"\t"»if 2 in trackList:
+		«"\t"»«"\t"»s.speak("The time that has passed is " + str(tracktime) + " seconds")«"\n"»
+		«"\t"»if 3 in trackList: 
+		«"\t"»«"\t"»if countobjects == 1:
+		«"\t"»«"\t"»«"\t"»s.speak("I have bumped into " + str(countobjects) + " object")«"\n"»
+		«"\t"»«"\t"»else:
+		«"\t"»«"\t"»«"\t"»s.speak("I have bumped into " + str(countobjects) + " objects")«"\n"»
+		countobjects=0
+		numLakesFound=0
+		numSamples=0
 	'''
 	
+	//The type of mission that specifies finding the lake(s) on Mars. Can be specified to find the same
+	//one multiple times, or once per color. Also can specify to take samples or not.
 	def static dispatch missionMain(FindLakesMission Mission)'''
 		startTime= time()
+		countobjects=0
 		colorsToFind= [«FOR col : Mission.findcolor SEPARATOR " , "»«toText(col.colors)»«ENDFOR»]
 		removal= «toText(Mission.findCO)»
 		takeSample=«toText(Mission.takeSamples)»
@@ -209,6 +234,11 @@ class PythonGenerator {
 		«ELSE»
 		avoidList=[]
 		«ENDIF»
+		«IF Mission.keeptrack !== null»
+		trackList = [«FOR trackO : Mission.keeptrack SEPARATOR " , "»«trackCon2Text(trackO)»«ENDFOR»]
+		«ELSE»
+		trackList=[]
+		«ENDIF»
 		statMod = threading.Thread(target=stateModerator, args=())«"\n"»
 		motMod = threading.Thread(target=motorModerator, args=())«"\n"»
 		senMod = threading.Thread(target=sensorModerator, args=(stopList, avoidList,colorsToFind,removal,takeSample,))«"\n"»
@@ -217,6 +247,7 @@ class PythonGenerator {
 		statMod.start()«"\n"»
 		motMod.start()«"\n"»
 		senMod.join()«"\n"»
+		tracktime=int(time()-startTime)
 		colorsToFind=[]«"\n"»
 		statMod.join()«"\n"»
 		motMod.join()«"\n"»
@@ -228,8 +259,30 @@ class PythonGenerator {
 		needToHandleLeftBumper=False«"\n"»
 		needToHandleRightBumper=False«"\n"»
 		s.speak("Mission complete!")«"\n"»
+		if trackList != []:
+		«"\t"»if 1 in trackList:
+		«"\t"»«"\t"»if numLakesFound == 1:
+		«"\t"»«"\t"»«"\t"»s.speak("I have found " + str(numLakesFound) + " lake")
+		«"\t"»«"\t"»else:
+		«"\t"»«"\t"»«"\t"»s.speak("I have found " + str(numLakesFound) + " lakes")
+		«"\t"»«"\t"»if takeSample and numSamples == 1:
+		«"\t"»«"\t"»«"\t"»s.speak("And I have taken "+ str(numSamples) + " sample")
+		«"\t"»«"\t"»elif takeSample:
+		«"\t"»«"\t"»«"\t"»s.speak("And I have taken "+ str(numSamples) + " samples")
+		«"\t"»if 2 in trackList:
+		«"\t"»«"\t"»s.speak("The time that has passed is " + str(tracktime) + " seconds")«"\n"»
+		«"\t"»if 3 in trackList:
+		«"\t"»«"\t"»if countobjects == 1:
+		«"\t"»«"\t"»«"\t"»s.speak("I have bumped into " + str(countobjects) + " object")«"\n"»
+		«"\t"»«"\t"»else:
+		«"\t"»«"\t"»«"\t"»s.speak("I have bumped into " + str(countobjects) + " objects")«"\n"»
+		countobjects=0
+		numLakesFound=0
+		numSamples=0
 	'''
 	
+	//The code related to the bluetooth functions, such as connecting, disconnecting and listening.
+	//Always listen to other brick till the code ends.
 	def static blueToothCode()'''
 		def connect(server_mac):«"\n"»
 		«"\t"»port = 3«"\n"»
@@ -275,6 +328,8 @@ class PythonGenerator {
 		«"\t"»sock_out.flush()«"\n"»
 		'''
 
+	//Function for checking whether the rover is at risk of falling off Mars. Adjust globals according to
+	//the status of falling off, yes or not.
 	def static doNotFallOff()'''
 		def doNotFallOff():«"\n"»
 		«"\t"»global backUnsafe«"\n"»
@@ -303,6 +358,7 @@ class PythonGenerator {
 		«"\t"»«"\t"»backUnsafe=False«"\n"»
 	'''
 	
+	//Code that specifies the thread for the motor. Stop a motor if set at zero, else use specified speed.
 	def static motorModerator()'''
 		def motorModerator():«"\n"»
 		«"\t"»global ending«"\n"»
@@ -323,6 +379,7 @@ class PythonGenerator {
 		«"\t"»«"\t"»sleep(0.1)«"\n"»
 	'''
 	
+	//Code that specifies how to avoid a color. Adjust same globals as for not falling off (minus back depth)
 	def static colorAvoid()'''
 	def colorAvoid(color):«"\n"»
 	«"\t"»global forwardCLUnsafe«"\n"»
@@ -345,6 +402,7 @@ class PythonGenerator {
 	«"\t"»«"\t"»forwardCRUnsafe=False«"\n"»
 	'''
 	
+	//Functions that specify for each state whether the robot should switch to another state or not.
 	def static stateSwitch()'''
 	def stateExp():«"\n"»
 	«"\t"»global backUnsafe«"\n"»
@@ -447,6 +505,9 @@ class PythonGenerator {
 	«"\t"»return ''«"\n"»
     '''
     
+    //Specifies the code for determining in which state the robot is, the behaviour for each state, and
+    // switching states. Once a behaviour is done, reset it to exploration as the robot first checks from
+    //explore state if it should change to another state.
     def static state2Text()'''
     def determineState(curState):
         if curState=='Exploring':
@@ -653,12 +714,14 @@ class PythonGenerator {
     	global rightColorF«"\n"»
     	global motSpeed
     	global measurementDone
+    	global numSamples
     	if midColorF and not leftColorF and rightColorF:
     		motSpeed=[0,0]
     		measurement_arm.on_for_rotations(-10, 0.30, block=True)
     		sleep(3)
     		measurement_arm.on_for_rotations(10,0.30, block=True)
     		measurementDone=True
+    		numSamples+=1
     		return time(), 'Exploring', None
     	elif midColorF and not leftColorF and not rightColorF:
     		motSpeed[0]=-5
@@ -725,26 +788,21 @@ class PythonGenerator {
     «"\t"»«"\t"»«"\t"»rotationChoice=None
     «"\t"»«"\t"»sleep(0.1)«"\n"»
     '''
-	/* 
-	def static dispatch sensor2Text(DriveMission Mission)'''
-		def sensorModerator():«"\n"»
-		«"\t"»global ending«"\n"»
-		«"\t"»curTime=time()«"\n"»
-		«"\t"»while True:
-		«"\t"»«"\t"»doNotFallOff()
-		«"\t"»«"\t"»new_colorLeft = csLeft.color
-		«"\t"»«"\t"»new_colorMid = csMid.color
-		«"\t"»«"\t"»new_colorRight = csRight.color
-		«"\t"»«"\t"»if «FOR stpc : Mission.stopcons SEPARATOR " or " AFTER ":"»«stopCon2Text(stpc)»«ENDFOR»«"\n"»
-		«"\t"»«"\t"»«"\t"»break«"\n"»
-		«IF Mission.avoid !== null»
-		«FOR avoidC : Mission.avoid»
-		«avoidToText(avoidC)»
-		«ENDFOR»
-		«ENDIF»
-		«"\t"»ending=True«"\n"»
-		'''*/
 		
+	//Code for checking the sonar and the bumper. Also checks if the robot is at risk
+	// of falling off and where and whether the robot has found a color that the robot is looking for.
+	//The sensormoderator ('the monster') is a thread that gets the information out of its surroundings,
+	// and converts this information into booleans that the state moderator uses to determine in which state
+	//the robot is in. If this thread ends, also end other threads except for bluetooth and main thread. 
+	//The code for sensing a color the robot needs to find is long and complicated due its usage of many booleans. 
+	//detectedCol : the robot detected a new color, with which the robot adds one more lake found to our total
+	//colourDetected: The robot found a color that is not new. Use this to check if the robot is off the found color and
+	// can reset the need to avoid it.
+	//shouldFindColors: the robot needs to find colors if this boolean is set to true.
+	// ColorsToFind: the list of colors to find. If this list starts empty, there is no color to find
+	// and the above boolean is set to false. If it has at least one element, the boolean above is set to
+	//true. If this list gets empty later, the mission is complete.
+	//needToAvoidColor: the color the robot needs to avoid after having detected it.
 	def static sensor2Text()'''
 		def sonarChecker():
 			global forwardSonarUnsafe
@@ -755,18 +813,25 @@ class PythonGenerator {
 				needToHandleForSonar= False
 		
 		def bumperChecker():
-			global leftBumperUnsafe«"\n"»
-			global rightBumperUnsafe«"\n"»
-			global needToHandleLeftBumper«"\n"»
-			global needToHandleRightBumper«"\n"»
-			if leftBumperUnsafe:
-				needToHandleLeftBumper=True
-			else:
-				needToHandleLeftBumper=False
-			if rightBumperUnsafe:
-				needToHandleRightBumper=True
-			else:
-				needToHandleRightBumper=False
+		«"\t"»global leftBumperUnsafe«"\n"»
+		«"\t"»global rightBumperUnsafe«"\n"»
+		«"\t"»global needToHandleLeftBumper«"\n"»
+		«"\t"»global needToHandleRightBumper«"\n"»
+		«"\t"»global countobjects«"\n"»
+		«"\t"»if leftBumperUnsafe:«"\n"»
+		«"\t"»«"\t"»needToHandleLeftBumper=True«"\n"»
+		«"\t"»elif needToHandleLeftBumper and needToHandleRightBumper and not leftBumperUnsafe and not rightBumperUnsafe:«"\n"»
+		«"\t"»«"\t"»countobjects+=1«"\n"»
+		«"\t"»«"\t"»needToHandleLeftBumper=False
+		«"\t"»«"\t"»needToHandleRightBumper=False
+		«"\t"»elif needToHandleLeftBumper and not leftBumperUnsafe and not needToHandleRightBumper:«"\n"»
+		«"\t"»«"\t"»countobjects+=1«"\n"»
+		«"\t"»«"\t"»needToHandleLeftBumper=False«"\n"»
+		«"\t"»if rightBumperUnsafe:«"\n"»
+		«"\t"»«"\t"»needToHandleRightBumper=True«"\n"»
+		«"\t"»elif needToHandleRightBumper and not rightBumperUnsafe and not needToHandleLeftBumper:«"\n"»
+		«"\t"»«"\t"»countobjects+=1«"\n"»
+		«"\t"»«"\t"»needToHandleRightBumper=False«"\n"»
 		
 		def sensorModerator(stopList, avoidList, colorsToFind, removal, takeSample):«"\n"»
 		«"\t"»global ending«"\n"»
@@ -777,10 +842,12 @@ class PythonGenerator {
 		«"\t"»global measurementDone«"\n"»
 		«"\t"»global forwardCMUnsafe«"\n"»
 		«"\t"»global backUnsafe«"\n"»
+		«"\t"»global numLakesFound«"\n"»
+		«"\t"»detectedCol = False #Boolean for tracking option.«"\n"»
 		«"\t"»prevTime=time()«"\n"»
-		«"\t"»shouldFindColors= False
-		«"\t"»needToAvoidColor=-1
-		«"\t"»if colorsToFind!=[]:
+		«"\t"»shouldFindColors= False #Boolean on whether the robot needs to find a color or not
+		«"\t"»needToAvoidColor=-1 #The color the robot has to avoid after having detected it to prevent sampling the same color multiple times in a row.
+		«"\t"»if colorsToFind!=[]: #Robot needs to find a color(s).
 		«"\t"»«"\t"»shouldFindColors=True
 		«"\t"»while True:
 		«"\t"»«"\t"»doNotFallOff()
@@ -798,8 +865,8 @@ class PythonGenerator {
 		«"\t"»«"\t"»if shouldFindColors:
 		«"\t"»«"\t"»«"\t"»if colorsToFind==[]:
 		«"\t"»«"\t"»«"\t"»«"\t"»break
-		«"\t"»«"\t"»«"\t"»if takeSample:
-		«"\t"»«"\t"»«"\t"»«"\t"»colorDetected=0
+		«"\t"»«"\t"»«"\t"»if takeSample: #Finding colors when the robot needs to take samples
+		«"\t"»«"\t"»«"\t"»«"\t"»colorDetected=0 #Color detected when measurement is done: allows to compare with the color found for the measurement in order to avoid it after the sample has been taken.
 		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorLeft in colorsToFind and not measurementDone:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»leftColorF=True
 		«"\t"»«"\t"»«"\t"»«"\t"»elif new_colorLeft in colorsToFind:
@@ -821,47 +888,56 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»midColorF=False
 		«"\t"»«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»rightColorF=False
-		«"\t"»«"\t"»«"\t"»«"\t"»if colorDetected!=0 and needToAvoidColor==-1:
-		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=colorDetected : colorAvoid(copy))
-		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
+		«"\t"»«"\t"»«"\t"»«"\t"»if colorDetected!=0 and needToAvoidColor==-1: #Add color found to list of colors to avoid.
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=colorDetected : colorAvoid(copy)) #Color found added to avoid list in order to avoid it
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»numLakesFound+=1 
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal: #Remove color in case the robot only has to find each color once.
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(colorDetected)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»measurementDone=False
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=colorDetected
-		«"\t"»«"\t"»«"\t"»«"\t"»elif colorDetected!=needToAvoidColor and not removal and measurementDone:
+		«"\t"»«"\t"»«"\t"»«"\t"»elif colorDetected!=needToAvoidColor and not removal and measurementDone: # The robot is off the color that it needed to avoid, and the color should be allowed to be found again.
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»del avoidList[-1]
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»measurementDone=False
-		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=-1
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=-1 #No color that was in colorsToFind needs to be avoided, thus reset it to -1 to find a color again.
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»#To get the robot to turn away, enforce a desperate turn for a short period.
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»forwardCMUnsafe=True
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»backUnsafe=True
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»sleep(5)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»forwardCMUnsafe=False
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»backUnsafe=False
-		«"\t"»«"\t"»«"\t"»else:
+		«"\t"»«"\t"»«"\t"»else: #Finding colors when the robot does not need to take a sample
 		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorLeft in colorsToFind and needToAvoidColor==-1:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorLeft)
-		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=new_colorLeft : colorAvoid(copy))
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=new_colorLeft : colorAvoid(copy)) #Color found added to avoid list in order to avoid it
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»detectedCol=True
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(new_colorLeft)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=new_colorLeft
 		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorMid in colorsToFind and needToAvoidColor==-1:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorMid)
-		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=new_colorMid : colorAvoid(copy))
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=new_colorMid : colorAvoid(copy)) #Color found added to avoid list in order to avoid it
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»detectedCol=True
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(new_colorMid)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=new_colorMid
 		«"\t"»«"\t"»«"\t"»«"\t"»if new_colorRight in colorsToFind and needToAvoidColor==-1:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»print("Found a color ", new_colorRight)
-		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=new_colorRight : colorAvoid(copy))
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»avoidList.append(lambda copy=new_colorRight : colorAvoid(copy)) #Color found added to avoid list in order to avoid it
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»detectedCol=True
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»if removal:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»colorsToFind.remove(new_colorRight)
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»else:
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=new_colorRight
-		«"\t"»«"\t"»«"\t"»«"\t"»if not removal and new_colorLeft!=needToAvoidColor and new_colorMid!=needToAvoidColor and new_colorRight!=needToAvoidColor:
-		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»del avoidList[-1]
-		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=-1
+		«"\t"»«"\t"»«"\t"»«"\t"»if detectedCol:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»numLakesFound+=1
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»detectedCol = False
+		«"\t"»«"\t"»«"\t"»«"\t"»if not removal and needToAvoidColor!=-1 and new_colorLeft!=needToAvoidColor and new_colorMid!=needToAvoidColor and new_colorRight!=needToAvoidColor:
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»del avoidList[-1] #If the robot needs to find multiple colors and we are off the previous found color, turn away and allow the color to be found again.
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=-1 #No color that was in colorsToFind needs to be avoided, thus reset it to -1 to find a color again.
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»#To get the robot to turn away, enforce a desperate turn for a short period.
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»forwardCMUnsafe=True
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»backUnsafe=True
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»sleep(5)
@@ -869,84 +945,12 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»backUnsafe=False
 		«"\t"»ending=True«"\n"»
 		'''
-/* 
-	def static dispatch sensor2Text(DoNothingMission Mission)'''
-		def sensorModerator():«"\n"»
-		«"\t"»global ending«"\n"»
-		«"\t"»while (int(time())-currenttime)>«Mission.time»:«"\n"»
-		«IF Mission.offB !== null»
-		«"\t"»«"\t"»if «FOR btnElement : Mission.offB SEPARATOR " or " AFTER ":"»«toText(btnElement.buttons)»«ENDFOR»«"\n"»
-		«"\t"»«"\t"»«"\t"»break«"\n"»«ENDIF»
-		«"\t"»«"\t"»sleep(0.01)«"\n"»
-		«"\t"»ending=True«"\n"»
-		'''*/
-		
+
 	def static dispatch avoidToText(UseObstacle avoidC)''''''
 	
 	def static dispatch avoidToText(ColorWithName avoidC)'''
 	«"\t"»«"\t"»colorAvoid(«toText(avoidC.color)»)«"\n"»
 	'''
-/* 
-	def static dispatch mission2Text(DriveMission mission)'''
-		while (True):«"\n"» 
-		«"\t"»speed = «toText(mission.speed)»«"\n"»
-		«toText(mission.dir)»
-		«"\t"»new_color = cs.color«"\n"»
-		«"\t"»distance = us.value()/10«"\n"»
-		«IF mission.avoid !== null»
-		«"\t"»if «FOR obst : mission.avoid SEPARATOR " or " AFTER ":"»«obstacles2Text(obst)»«ENDFOR»«"\n"»
-		«avoidFunction()»«ENDIF»
-		«"\t"»if «FOR stpc : mission.stopcons SEPARATOR " or " AFTER ":"»«stopCon2Text(stpc)»«ENDFOR»«"\n"»
-		«"\t"»«"\t"»left_motor.stop()«"\n"»
-		«"\t"»«"\t"»right_motor.stop()«"\n"»
-		«"\t"»«"\t"»break«"\n"»'''
-	
-	def static dispatch mission2Text(DoNothingMission mission)'''
-		while (int(time.time()) - currenttime)> «mission.time»:«"\n"»
-		«"\t"»time.sleep(1)«"\n"»
-	'''
-	def static dispatch mission2Text(FindLakesMission mission)'''
-		colorsToFind = [«FOR fc : mission.findcolor SEPARATOR "," AFTER "]"»«toText(fc.colors)»«ENDFOR»«"\n"»
-		while (True):«"\n"» 
-		«"\t"»speed = «toText(mission.speed)»«"\n"»
-		«randomMotor()»
-		«"\t"»new_color = cs.color«"\n"»
-		«"\t"»distance = us.value()/10«"\n"»
-		«IF mission.avoid !== null»
-		«"\t"»if «FOR obst : mission.avoid SEPARATOR " or " AFTER ":"»«obstacles2Text(obst)»«ENDFOR»«"\n"»
-		«avoidFunction()»«ENDIF»
-		«"\t"»if colorsToFind ==[] or «FOR stpc : mission.stopcons SEPARATOR " or " AFTER ":"»«stopCon2Text(stpc)»«ENDFOR»«"\n"»
-		«"\t"»«"\t"»left_motor.stop()«"\n"»
-		«"\t"»«"\t"»right_motor.stop()«"\n"»
-		«"\t"»«"\t"»break«"\n"»
-		«"\t"»if new_color in colorsToFind:«"\n"»
-		«"\t"»«"\t"»colorsToFind.remove(new_color)«"\n"»
-		
-	'''
-	def static dispatch mission2Text(FollowLineMission mission)'''
-		colorToFollow = «toText(mission.followColor)»«"\n"»
-		colorsToAvoid = [1,2,4,5]«"\n"»
-		colorsToAvoid.remove(colorToFollow)«"\n"»
-		while True:«"\n"»
-		«"\t"»speed = «toText(mission.speed)»«"\n"»
-		«forwardMotor()»
-		«"\t"»new_color = cs.color«"\n"»
-		«"\t"»distance = us.value()/10«"\n"»
-		«"\t"»if «FOR stpc : mission.stopcons SEPARATOR " or " AFTER ":"»«stopCon2Text(stpc)»«ENDFOR»«"\n"»
-		«"\t"»«"\t"»left_motor.stop()«"\n"»
-		«"\t"»«"\t"»right_motor.stop()«"\n"»
-		«"\t"»«"\t"»break«"\n"»
-		«"\t"»if new_color in colorsToAvoid:«"\n"»
-		«"\t"»«"\t"»left_motor.stop()«"\n"»
-		«"\t"»«"\t"»right_motor.stop()«"\n"»
-		«"\t"»«"\t"»curTime=0.1
-		«"\t"»«"\t"»leftForward=1
-		«"\t"»«"\t"»while new_color != colorToFollow:«"\n"»
-		«"\t"»«"\t"»«"\t"»left_motor.on_for_seconds(SpeedPercent(leftForward), curTime,  block=False)«"\n"»
-		«"\t"»«"\t"»«"\t"»right_motor.on_for_seconds(SpeedPercent(leftForward), curTime,  block=True)«"\n"»
-		«"\t"»«"\t"»«"\t"»leftForward=leftForward*-1
-		«"\t"»«"\t"»«"\t"»curtime+=0.1
-		'''*/
 		
 	def static dispatch stopCon2Text(Obstacles obst)'''«obstacles2Text(obst)»'''
 	
@@ -961,6 +965,7 @@ class PythonGenerator {
 	def static dispatch avoidCon2Text(ColorWithName colorN)'''lambda : colorAvoid(«toText(colorN.color)»)'''
 	
 	def static dispatch stopCon2Text(ButtonPress button)'''«toText(button.buttonloc)» '''	
+	def static trackCon2Text(TrackingOptions option) '''«toText(option)»'''
 	
 	def static CharSequence toStopText(ObstaclesEnum obst){
 		switch(obst){
@@ -978,9 +983,9 @@ class PythonGenerator {
 	
 	def static CharSequence toText(TrackingOptions option){
 		switch(option){
-			case TrackingOptions::LAKES: return''''''
-			case TrackingOptions::TIME: return ''''''
-			case TrackingOptions::BRICK: return ''''''
+			case TrackingOptions::LAKES: return'''1'''
+			case TrackingOptions::TIME: return '''2'''
+			case TrackingOptions::BRICK: return '''3'''
 		}
 	}
 	
@@ -1027,6 +1032,9 @@ class PythonGenerator {
 		}
 	}
 	
+		//Enters all potential motorOptions as functions: left, right, forward, backward and random.
+		//prevTime is only used by randomMotor, but in order to use all interchangeably, 
+		//each option needed to have the variable.
 		def static motorOptions()'''
 			def leftMotor(prevTime):
 				global motSpeed
