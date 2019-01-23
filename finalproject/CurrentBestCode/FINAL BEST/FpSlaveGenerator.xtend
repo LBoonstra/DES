@@ -14,13 +14,13 @@ class FpSlaveGenerator {
 		«mainThread()»
 		'''
 	}
-	//Code that checks if the left bumper on the robot is pressed. If yes the value 1 will be sent to the 
+	//Code that checks if the left bumper on the robot is pressed. If true, the value 1 will be sent to the 
 	//master. 
-	//If the bumper is not pressed anymore but was pressed at previously the slave will sent a 2 over to the 
+	//If the bumper is not pressed anymore but was pressed previously the slave will sent a 2 over to the 
 	//master.
 		def static bumperSensorLeft()  '''
 			def leftBumperSensor(sock_out):
-			«"\t"»#Test if the left bumper was pressed in and send info if so. When the bumper stops being pressed in, send info of that.
+			«"\t"»#Test if the left bumper was pressed and send info if so. When the bumper stops being pressed, send info of that.
 				tsLeft = TouchSensor(INPUT_1)
 				pressedIn= False
 				while True:
@@ -34,11 +34,11 @@ class FpSlaveGenerator {
 					if ending:
 						break
 		'''
-		//Code that checks if the right bumper on the robot is pressed. If yes the value 3 will be sent to the master. 
-	//If the bumper is not pressed anymore but was pressed at previously the slave will sent a 4 over to the master.	
+		//Code that checks if the right bumper on the robot is pressed. If true, the value 3 will be sent to the master. 
+	//If the bumper is not pressed anymore but was pressed previously the slave will sent a 4 over to the master.	
 		def static bumperSensorRight()  '''
 			def rightBumperSensor(sock_out):
-			«"\t"»#Test if the right bumper was pressed in and send info if so. When the bumper stops being pressed in, send info of that.
+			«"\t"»#Test if the right bumper was pressed and send info if so. When the bumper stops being pressed, send info of that.
 				tsRight = TouchSensor(INPUT_4)
 				pressedIn= False
 				while True:
@@ -53,13 +53,13 @@ class FpSlaveGenerator {
 						break
 		'''
 		
-		//Code that checks if there is something in front of the robot. If yes the value 5 will be sent to 
+		//Code that checks if there is something in front of the robot. If true, the value 5 will be sent to 
 		//the master. 
 		//If there is no object that is close to the robot at the front end, but there was previously then 
 		//the slave will sent a 6 over to the master.
 		def static sonarSensor() '''
 			def forwSonarSensor(sock_out):
-			«"\t"»#Test if the sonar notices an object and send info if so. When the sonar stops detecting an object, send info of that.
+			«"\t"»#Test if the sonar notices an object within 17 centimeters and send info if so. When the sonar stops detecting an object, send info of that.
 				us = UltrasonicSensor()
 				us.code = 'US-DIST-CM'
 				pressedIn= False
@@ -131,7 +131,7 @@ class FpSlaveGenerator {
 	
 	/*
 	 * Starts all other threads, including the bluetooth thread. Adjust server_mac according to the
-	 * server_mac of the master (and also adjust this in the PythonGenerator). Mainthread waits
+	 * server_mac of the master (and also adjust this in the PythonGenerator). mainThread waits
 	 * until all other threads have ended before ending itself.
 	 */
 	def static mainThread()'''

@@ -15,7 +15,6 @@ import dsl.finalproject.fp.Task
 import dsl.finalproject.fp.TimeObject
 import dsl.finalproject.fp.TrackingOptions
 import dsl.finalproject.fp.UseObstacle
-import dsl.finalproject.fp.Mission
 import dsl.finalproject.fp.Boole
 
 class PythonGenerator {
@@ -170,7 +169,7 @@ class PythonGenerator {
 		s.speak("Mission complete!")«"\n"»
 	'''
 	
-	//The type of mission that specifies driving in a random or a specified direction, such as forward, back
+	//The type of mission that specifies driving in a random or a specified direction, such as forward or back.
 	def static dispatch missionMain(DriveMission Mission)'''
 		startTime= time()
 		colorsToFind=[]«"\n"»
@@ -336,7 +335,7 @@ class PythonGenerator {
 	//the status of falling off, yes or not.
 	def static doNotFallOff()'''
 		def doNotFallOff():«"\n"»
-		«"\t"»#Code that checks if the robot is at an unsafe location: check forward sensors for depth, and the sonar back for depth.
+		«"\t"»#Code that checks if the robot is at an unsafe location: check forward color sensors for depth, and the sonar back for depth.
 		«"\t"»global backUnsafe«"\n"»
 		«"\t"»global forwardCLUnsafe«"\n"»
 		«"\t"»global forwardCRUnsafe«"\n"»
@@ -412,7 +411,7 @@ class PythonGenerator {
 	//Functions that specify for each state whether the robot should switch to another state or not.
 	def static stateSwitch()'''
 	def stateExp():«"\n"»
-	«"\t"»#Check if the robot can remain in the exploration state, or should ascend to a higher state.
+	«"\t"»#Check if the robot can remain in the exploration state, or should ascend to a more important state to keep the robot safe.
 	«"\t"»global backUnsafe«"\n"»
 	«"\t"»global forwardCLUnsafe«"\n"»
 	«"\t"»global forwardCRUnsafe«"\n"»
@@ -444,7 +443,7 @@ class PythonGenerator {
 	«"\t"»return ''«"\n"»
 	«"\n"»
 	def stateObstacle():
-	«"\t"»#Check if the robot can stay in the obstacle state, or should ascent to a higher state.
+	«"\t"»#Check if the robot can stay in the obstacle state, or should ascend to a more important state to keep the robot safe.
 	«"\t"»global backUnsafe«"\n"»
 	«"\t"»global forwardCLUnsafe«"\n"»
 	«"\t"»global forwardCRUnsafe«"\n"»
@@ -468,7 +467,7 @@ class PythonGenerator {
 	«"\t"»return ''«"\n"»
 	«"\n"»
 	def stateBumper():
-	«"\t"»#Check if the rover can stay in the bumper avoidance state, or has to move to a higher state.
+	«"\t"»#Check if the rover can stay in the bumper avoidance state, or should ascend to a more important state to keep the robot safe.
 	«"\t"»global backUnsafe«"\n"»
 	«"\t"»global forwardCLUnsafe«"\n"»
 	«"\t"»global forwardCRUnsafe«"\n"»
@@ -486,7 +485,7 @@ class PythonGenerator {
 	«"\t"»return ''«"\n"»
 	«"\n"»
 	def stateF():«"\n"»
-	«"\t"»#Check if the rover can stay in a forward avoidance state, or should move to desperate turn state.
+	«"\t"»#Check if the rover can stay in a forward avoidance state, or should move to the more important desperate turn state.
 	«"\t"»global backUnsafe«"\n"»
 	«"\t"»global forwardCLUnsafe«"\n"»
 	«"\t"»global forwardCRUnsafe«"\n"»
@@ -497,7 +496,7 @@ class PythonGenerator {
 	«"\t"»«"\t"»return ''«"\n"»
 	«"\n"»
 	def stateBD():«"\n"»
-	«"\t"»#Check if the rover can stay in a backward avoidance state, or should move to a desperate turn state.
+	«"\t"»#Check if the rover can stay in a backward avoidance state, or should move to the more important desperate turn state.
 	«"\t"»global backUnsafe«"\n"»
 	«"\t"»global forwardCLUnsafe«"\n"»
 	«"\t"»global forwardCRUnsafe«"\n"»
@@ -552,7 +551,7 @@ class PythonGenerator {
         return prevTime, 'Exploring', rotationChoice
         
     def bdMot(prevTime, rotationChoice):
-    «"\t"»#Do the behaviour associated with avoiding an unsafe back: drive forward and rotate in the direction specified in rotationChoice. If None defined, pick one at random.
+    «"\t"»#Do the behaviour associated with avoiding an unsafe space behind the robot: drive forward and rotate in the direction specified in rotationChoice. If None defined, pick one at random.
         global motSpeed
         global backUnsafe
         global forwardCLUnsafe
@@ -694,7 +693,7 @@ class PythonGenerator {
         return time(), 'Exploring', None
             
     def rbMot(prevTime, rotationChoice):
-    «"\t"»#Do the behaviour associated with an object hitting right bumper: drive back and turn to the left
+    «"\t"»#Do the behaviour associated with an object hitting right bumper: drive back and turn to the left.
         global motSpeed
         global needToHandleForSonar
         global needToHandleLeftBumper
@@ -712,7 +711,7 @@ class PythonGenerator {
         return time(), 'Exploring', None
     
     def despTurn(prevTime, rotationChoice):
-    «"\t"»#Do the behaviour associated with a desperate turn: keep rotating in a direction till the robot is safe either forward or back.
+    «"\t"»#Do the behaviour associated with a desperate turn: keep rotating in a direction till the robot is safe either forward or backward.
         global motSpeed
         global backUnsafe
         global forwardCLUnsafe
@@ -778,7 +777,7 @@ class PythonGenerator {
     def stateModerator():
     «"\t"»#Controls the state/behaviour of the robot. Check what the circumstances are and how they adjust state, then perform the associated state behaviour.
     «"\t"»#Cycle through it every 0.1 second. Use prevtime to determine how long ago the robot started doing a behaviour (and thus how long it still has to).
-    «"\t"»#Use rotationChoice to determine what the last direction was we rotated towards. If need to rotate soon again, keep rotating same direction so robot does not keep stuck rotating back and forth. Reset if robot stays long enough in exploration.
+    «"\t"»#Use rotationChoice to determine what the last direction was the robot rotated towards. If the robot needs to rotate in a short time period, keep rotating same direction so robot does not keep stuck rotating back and forth. Reset rotationChoice if robot stays long enough in exploration.
     «"\t"»global ending«"\n"»
     «"\t"»global motSpeed«"\n"»
     «"\t"»curState= 'Exploring'«"\n"»
@@ -865,9 +864,14 @@ class PythonGenerator {
 		def sensorModerator(stopList, avoidList, colorsToFind, removal, takeSample):«"\n"»
 		«"\t"»#Controls the sensors and translates their output into booleans for the state sensor to use.
 		«"\t"»#Go through the functions of the stopList to check when the robot should stop. Go through avoidList to adjust further booleans due unsafe conditions happening.
-		«"\t"»#If removal is true, remove colors from colorsToFind permanently once found. If takeSample is true, do behaviour to take the sample, else simply note the color was found.
-		«"\t"»#Once this moderator ends, set 'ending' to true to shut down all other functions.
-		«"\t"»#Use a lot of booleans in order to specify specific conditions and try to determine when to add/remove from the avoidList the colors.hhh==
+		«"\t"»#If removal is true, remove colors from colorsToFind permanently once found. If takeSample is true, do behaviour to take the sample, else simply note the color that was found.
+		«"\t"»#Once this moderator ends, set 'ending' to true to shut down all other moderators except the Bluetooth thread.
+		«"\t"»#Use a lot of booleans in order to specify specific conditions and try to determine when to add/remove from the avoidList the colors.
+		«"\t"»#shouldFindColors: the robot needs to find colors if this boolean is set to true.
+		«"\t"»#ColorsToFind: the list of colors to find. If this list starts empty, there is no color to find
+		«"\t"»#and the above boolean is set to false. If it has at least one element, the boolean above is set to
+		«"\t"»#true. If this list gets empty later, the mission is complete.
+		«"\t"»#needToAvoidColor: the color the robot needs to avoid after having detected it.
 		«"\t"»global ending«"\n"»
 		«"\t"»global btn«"\n"»
 		«"\t"»global leftColorF«"\n"»
@@ -969,7 +973,7 @@ class PythonGenerator {
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»numLakesFound+=1
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»detectedCol = False
 		«"\t"»«"\t"»«"\t"»«"\t"»if not removal and needToAvoidColor!=-1 and new_colorLeft!=needToAvoidColor and new_colorMid!=needToAvoidColor and new_colorRight!=needToAvoidColor:
-		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»del avoidList[-1] #If the robot needs to find multiple colors and we are off the previous found color, turn away and allow the color to be found again.
+		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»del avoidList[-1] #If the robot needs to find multiple colors and the robot is off the previous found color, turn away and allow the color to be found again.
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»needToAvoidColor=-1 #No color that was in colorsToFind needs to be avoided, thus reset it to -1 to find a color again.
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»#To get the robot to turn away, enforce a desperate turn for a short period.
 		«"\t"»«"\t"»«"\t"»«"\t"»«"\t"»forwardCMUnsafe=True
@@ -1071,7 +1075,7 @@ class PythonGenerator {
 		//each option needed to have the variable.
 		def static motorOptions()'''
 			def leftMotor(prevTime):
-			«"\t"»#Set speeds to rotate left
+			«"\t"»#Set speeds of left and right motor to rotate left
 				global motSpeed
 				global standardSpeed
 				motSpeed[0]=standardSpeed
@@ -1080,7 +1084,7 @@ class PythonGenerator {
 
 				
 			def rightMotor(prevTime):
-			«"\t"»#Set speeds to rotate right
+			«"\t"»#Set speeds of left and right motor to rotate right
 				global motSpeed
 				global standardSpeed
 				motSpeed[0]=-standardSpeed
@@ -1088,7 +1092,7 @@ class PythonGenerator {
 				return prevTime
 				
 			def forwardMotor(prevTime):
-			«"\t"»#Set speeds to drive forward
+			«"\t"»#Set speeds of left and right motor to drive forward
 				global motSpeed
 				global standardSpeed
 				motSpeed[0]=standardSpeed
@@ -1096,7 +1100,7 @@ class PythonGenerator {
 				return prevTime
 				
 			def backwardMotor(prevTime):
-			«"\t"»#Set speeds to drive backwards
+			«"\t"»#Set speeds of left and right motor to drive backwards
 				global motSpeed
 				global standardSpeed
 				motSpeed[0]=-standardSpeed
@@ -1104,7 +1108,7 @@ class PythonGenerator {
 				return prevTime
 				
 			def randomMotor(prevTime):
-			«"\t"»#Set speeds once in a while to random values in order to cause a random behaviour.
+			«"\t"»#Set speeds of left and right motor every 5 seconds to random values in order to cause a random behaviour.
 				global standardSpeed
 				global motSpeed
 				if time()-prevTime<2:«"\n"»
